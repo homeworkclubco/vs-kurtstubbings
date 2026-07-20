@@ -1,0 +1,80 @@
+---
+import Button from "@components/actions/Button.astro";
+import Heading from "@components/display/Heading.astro";
+import Prose from "@components/display/Prose.astro";
+import Container from "@components/layout/Container.astro";
+import Frame from "@components/layout/Frame.astro";
+import Section from "@components/layout/Section.astro";
+import Stack from "@components/layout/Stack.astro";
+import Switcher from "@components/layout/Switcher.astro";
+import { Image } from "astro:assets";
+import type { InferEntrySchema } from "astro:content";
+
+type Section_ = NonNullable<InferEntrySchema<"pages">["sections"]>[number];
+
+interface Props {
+  block: Extract<Section_, { type: "mediaTextBlock" }>;
+  index: number;
+}
+
+const { block } = Astro.props;
+const {
+  id,
+  heading,
+  body,
+  image,
+  mediaSide = "left",
+  padding = "xl",
+  fixedRatio = "4/3",
+  cta,
+} = block;
+---
+
+<Section id={id} class="MediaTextBlock" data-media-side={mediaSide} padding={padding}>
+  <Container>
+    <Switcher threshold="45em" space="md-2xl">
+      <div class="media-col">
+        <Frame ratio={fixedRatio} fill={false} class="media-frame">
+          <Image src={image.src} alt={image.alt} width={1200} />
+        </Frame>
+      </div>
+
+      <!-- Text column -->
+      <Stack space="lg" justify="center" class="content py-lg">
+        {
+          heading && (
+            <Heading as="h2" size="4">
+              {heading}
+            </Heading>
+          )
+        }
+        <Prose>
+          <Fragment set:html={body} />
+        </Prose>
+        {
+          cta && (
+            <Button as="a" href={cta.href}>
+              {cta.label}
+            </Button>
+          )
+        }
+      </Stack>
+    </Switcher>
+  </Container>
+</Section>
+
+<style>
+  /* Place media on the right by reversing the flex row */
+  .MediaTextBlock[data-media-side="right"] :global(.switcher) {
+    flex-direction: row-reverse;
+  }
+
+  /* Natural mode: let the image column size itself to its intrinsic ratio */
+  .MediaTextBlock[data-image-mode="natural"] .media-col {
+    align-self: start;
+  }
+
+  .media-frame {
+    height: 100%;
+  }
+</style>

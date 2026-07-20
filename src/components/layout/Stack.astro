@@ -1,0 +1,75 @@
+---
+import type { SpaceToken } from "../../types";
+
+interface Props {
+  as?:
+    | "div"
+    | "section"
+    | "article"
+    | "main"
+    | "ul"
+    | "ol"
+    | "header"
+    | "footer"
+    | "li"
+    | "nav"
+    | "a";
+  space?: SpaceToken; // Default: 'md'
+  splitAfter?: number;
+  align?: "start" | "center" | "end" | "stretch"; // Default: 'stretch'
+  justify?: "start" | "center" | "end" | "between" | "around"; // Default: 'start'
+  text?: "left" | "center" | "right";
+  class?: string;
+}
+
+const {
+  as: Tag = "div",
+  space,
+  splitAfter,
+  align,
+  justify,
+  text,
+  class: className,
+  ...rest
+} = Astro.props;
+
+const attributes = {
+  "data-gap": space,
+  "data-align": align,
+  "data-justify": justify,
+  "data-text": text,
+  "data-split-index": splitAfter,
+};
+---
+
+<Tag class:list={["stack", className]} {...attributes} {...rest}>
+  <slot />
+</Tag>
+
+<style>
+  @layer base {
+    .stack {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+      align-items: stretch;
+      justify-content: flex-start;
+    }
+
+    &:where([data-split-index="1"]) > :global(:nth-child(1)) {
+      margin-block-end: auto;
+    }
+    &:where([data-split-index="2"]) > :global(:nth-child(2)) {
+      margin-block-end: auto;
+    }
+    &:where([data-split-index="3"]) > :global(:nth-child(3)) {
+      margin-block-end: auto;
+    }
+    &:where([data-split-index="4"]) > :global(:nth-child(4)) {
+      margin-block-end: auto;
+    }
+    &:where([data-split-index="5"]) > :global(:nth-child(5)) {
+      margin-block-end: auto;
+    }
+  }
+</style>

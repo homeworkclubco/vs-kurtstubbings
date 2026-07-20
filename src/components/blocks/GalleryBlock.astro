@@ -1,0 +1,51 @@
+---
+import Heading from "@components/display/Heading.astro";
+import Container from "@components/layout/Container.astro";
+import JustifiedGallery from "@components/layout/JustifiedGallery.astro";
+import Section from "@components/layout/Section.astro";
+import Stack from "@components/layout/Stack.astro";
+import { getImage, Image } from "astro:assets";
+import type { InferEntrySchema } from "astro:content";
+
+type Section_ = NonNullable<InferEntrySchema<"pages">["sections"]>[number];
+
+interface Props {
+  block: Extract<Section_, { type: "galleryBlock" }>;
+  index: number;
+}
+
+const { block } = Astro.props;
+const { id, heading, images } = block;
+
+const fullSize = await Promise.all(
+  images.map(img => getImage({ src: img.src, width: 2400, format: "webp" }))
+);
+---
+
+<Section id={id} padding="xl">
+  <Container>
+    <Stack space="lg">
+      {heading && <Heading as="h2" font="heading" size="3">{heading}</Heading>}
+      {images.length > 0 && (
+        <JustifiedGallery>
+          {images.map((img, i) => (
+            <li data-ratio={img.src.width / img.src.height}>
+              <a
+                href={fullSize[i].src}
+                data-lightbox="galleryBlock"
+                data-alt={img.alt || `Image ${i + 1}`}
+              >
+                <Image
+                  src={img.src}
+                  alt={img.alt || `Image ${i + 1}`}
+                  width="1200"
+                  loading="lazy"
+                />
+              </a>
+            </li>
+          ))}
+        </JustifiedGallery>
+      )}
+    </Stack>
+  </Container>
+</Section>

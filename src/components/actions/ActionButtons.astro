@@ -1,0 +1,67 @@
+---
+import type { HTMLAttributes } from 'astro/types'
+import type { SpaceToken } from '../../types'
+import Cluster from '../layout/Cluster.astro'
+import Button from './Button.astro'
+import Icon from '../layout/Icon.astro'
+import { ArrowRight } from '@lucide/astro'
+import { getActionLinkMeta } from '../../utils/actionLink'
+import type { ActionLink } from '../../utils/actionLink'
+
+type Action = ActionLink & { id?: string | null }
+
+interface Props extends HTMLAttributes<'div'> {
+  actions?: Action[] | null
+  className?: string
+  buttonClass?: string
+  buttonAs?: 'a' | 'button' | 'span'
+  as?: string
+  space?: SpaceToken
+  spaceX?: SpaceToken
+  spaceY?: SpaceToken
+  justify?: 'start' | 'center' | 'end' | 'between' | 'around'
+  align?: 'start' | 'center' | 'end' | 'stretch'
+  noWrap?: boolean
+}
+
+const {
+  actions = [],
+  class: className,
+  buttonClass = '',
+  buttonAs = 'a',
+  ...clusterProps
+} = Astro.props as Props
+
+const iconMap: Record<string, any> = {
+  arrowRight: ArrowRight,
+  'arrow-right': ArrowRight,
+}
+
+if (!actions) {
+  return null
+}
+---
+
+{
+  actions.length > 0 && (
+    <Cluster class:list={['actions', className]} {...clusterProps}>
+      {actions.map((action: Action) => {
+        const { href, label, target, trailingIcon, appearance } = getActionLinkMeta(action)
+        const TrailingIcon = trailingIcon ? iconMap[trailingIcon] : undefined
+
+        return (
+          <Button
+            href={href}
+            target={target}
+            variant={appearance ?? undefined}
+            class={buttonClass}
+            as={buttonAs}
+          >
+            {label}
+            {TrailingIcon && <Icon>{<TrailingIcon />}</Icon>}
+          </Button>
+        )
+      })}
+    </Cluster>
+  )
+}

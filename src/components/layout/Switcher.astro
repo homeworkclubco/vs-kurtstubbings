@@ -1,0 +1,84 @@
+---
+import type { HTMLAttributes } from 'astro/types'
+import type { SpaceToken } from '../../types'
+
+interface Props extends HTMLAttributes<'div'> {
+  as?: string
+  /** Space between items. */
+  space?: SpaceToken
+  /** Minimum size before items wrap (any CSS length). */
+  threshold?: string
+  /** Maximum number of items per row before stacking. */
+  limit?: 2 | 3 | 4 | 5 | 6
+  align?: 'start' | 'center' | 'end' | 'stretch'
+  justify?: 'start' | 'center' | 'end' | 'between' | 'around'
+  class?: string
+}
+
+const {
+  as: Tag = 'div',
+  space,
+  threshold = '30rem',
+  limit,
+  align,
+  justify,
+  class: className,
+  style,
+  ...rest
+} = Astro.props
+
+const attributes = {
+  'data-gap': space,
+  'data-limit': limit ? String(limit) : undefined,
+  'data-align': align,
+  'data-justify': justify,
+}
+
+const vars = {
+  '--switcher-threshold': threshold,
+}
+---
+
+<Tag class:list={['switcher', className]} style={[vars, style]} {...attributes} {...rest}>
+  <slot />
+</Tag>
+
+<style>
+  @layer base {
+    .switcher {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-md);
+    }
+
+    .switcher > :global(*) {
+      flex-grow: 1;
+      flex-basis: calc((var(--switcher-threshold) - 100%) * 999);
+    }
+
+    [data-limit='2'] > :global(:nth-last-child(n + 3)),
+    [data-limit='2'] > :global(:nth-last-child(n + 3) ~ *) {
+      flex-basis: 100%;
+    }
+
+    [data-limit='3'] > :global(:nth-last-child(n + 4)),
+    [data-limit='3'] > :global(:nth-last-child(n + 4) ~ *) {
+      flex-basis: 100%;
+    }
+
+    [data-limit='4'] > :global(:nth-last-child(n + 5)),
+    [data-limit='4'] > :global(:nth-last-child(n + 5) ~ *) {
+      flex-basis: 100%;
+    }
+
+    [data-limit='5'] > :global(:nth-last-child(n + 6)),
+    [data-limit='5'] > :global(:nth-last-child(n + 6) ~ *) {
+      flex-basis: 100%;
+    }
+
+    [data-limit='6'] > :global(:nth-last-child(n + 7)),
+    [data-limit='6'] > :global(:nth-last-child(n + 7) ~ *) {
+      flex-basis: 100%;
+    }
+  }
+</style>

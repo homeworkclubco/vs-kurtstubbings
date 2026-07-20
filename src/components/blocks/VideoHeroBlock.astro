@@ -1,0 +1,43 @@
+---
+import Section from "@components/layout/Section.astro";
+import type { InferEntrySchema } from "astro:content";
+
+type Section_ = NonNullable<InferEntrySchema<"pages">["sections"]>[number];
+
+interface Props {
+  block: Extract<Section_, { type: "videoHeroBlock" }>;
+  index: number;
+}
+
+const { block } = Astro.props;
+const { id, src, poster } = block;
+---
+
+<Section id={id} class="VideoHeroBlock">
+  <video-background
+    src={src}
+    muted="true"
+    loop="true"
+    poster={poster}
+    autoplay="true"
+  >
+  </video-background>
+</Section>
+
+<style>
+  section {
+    border-bottom: 2px solid var(--color-accent);
+  }
+
+  video-background {
+    min-height: 85vh;
+
+    @media (--sm) {
+      min-height: 65vh;
+    }
+  }
+</style>
+
+<script>
+  import "../../scripts/video-bg.js";
+</script>

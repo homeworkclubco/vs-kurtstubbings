@@ -1,0 +1,151 @@
+---
+import type { HTMLAttributes } from "astro/types";
+import type { FontSizeToken } from "../../types";
+
+interface Props extends HTMLAttributes<"h1"> {
+  as?: "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "span" | "div";
+  size?: FontSizeToken;
+  weight?: "light" | "regular" | "medium" | "bold";
+  align?: "left" | "center" | "right";
+  trim?: "normal" | "start" | "end" | "both";
+  wrap?: "wrap" | "nowrap" | "balance" | "pretty";
+  truncate?: boolean;
+  color?: "foreground" | "secondary" | "accent";
+  href?: string | null;
+  target?: string | null;
+  class?: string;
+  font?: "heading" | "body" | "alt" | "heading-alt";
+}
+
+const {
+  as: Tag = "h2",
+  size = "4",
+  weight = "regular",
+  align,
+  trim = "normal",
+  wrap,
+  truncate = false,
+  color = "foreground",
+  class: className,
+  href,
+  target,
+  font = "heading",
+  ...rest
+} = Astro.props;
+---
+
+<Tag
+  class:list={["heading", className]}
+  data-font-size={size}
+  data-weight={weight}
+  data-text={align}
+  data-trim={trim}
+  data-wrap={wrap}
+  data-color={color}
+  data-truncate={truncate ? "" : undefined}
+  data-font={font}
+  {...rest}
+>
+  {
+    href ? (
+      <a href={href} target={target}>
+        <slot />
+      </a>
+    ) : (
+      <slot />
+    )
+  }
+</Tag>
+
+<style>
+  @layer base {
+    .heading {
+      /* Base Typography */
+      font-family: var(--font-family-heading);
+      line-height: var(--line-height-snug);
+      font-size: var(--heading-font-size);
+      color: var(--color-foreground);
+      text-wrap: balance;
+    }
+
+    /* --- Weights --- */
+    .heading[data-weight="light"] {
+      font-weight: 300;
+    }
+    .heading[data-weight="regular"] {
+      font-weight: 400;
+    }
+    .heading[data-weight="medium"] {
+      font-weight: 500;
+    }
+    .heading[data-weight="bold"] {
+      font-weight: 700;
+    }
+
+    /* --- Colors --- */
+    .heading[data-color="foreground"] {
+      color: var(--color-foreground);
+    }
+    .heading[data-color="secondary"] {
+      color: var(--color-foreground-secondary);
+    }
+    .heading[data-color="accent"] {
+      color: var(--color-accent);
+    }
+
+    /* --- Wrap --- */
+    .heading[data-wrap="wrap"] {
+      text-wrap: wrap;
+    }
+    .heading[data-wrap="nowrap"] {
+      white-space: nowrap;
+    }
+    .heading[data-wrap="balance"] {
+      text-wrap: balance;
+    }
+    .heading[data-wrap="pretty"] {
+      text-wrap: pretty;
+    }
+
+    /* --- Truncate --- */
+    .heading[data-truncate] {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* --- Trim --- */
+    .heading[data-trim="start"] {
+      line-height: 1;
+      margin-bottom: 0.25em;
+    }
+    .heading[data-trim="end"] {
+      line-height: 1;
+      margin-top: 0.25em;
+    }
+    .heading[data-trim="both"] {
+      line-height: 1;
+    }
+
+    /* --- Font --- */
+    .heading[data-font="heading"] {
+      font-family: var(--font-family-heading);
+      line-height: 1;
+    }
+
+    .heading[data-font="body"] {
+      font-family: var(--font-family-body);
+    }
+
+    .heading[data-font="alt"] {
+      font-family: var(--font-family-alt);
+      text-transform: none;
+    }
+
+    .heading[data-font="heading-alt"] {
+      font-family: var(--font-family-heading-alt);
+      font-weight: var(--font-weight-black);
+      color: var(--color-accent);
+    }
+  }
+</style>

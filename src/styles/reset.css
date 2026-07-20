@@ -1,0 +1,305 @@
+@layer base {
+  /*
+ * Base Styles
+ *
+ * Minimal resets and defaults
+ */
+
+  /* Use a more-intuitive box-sizing model */
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  * {
+    margin: 0;
+  }
+
+  :not(:defined) {
+    visibility: hidden;
+  }
+
+  /* Enable keyword animations */
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      interpolate-size: allow-keywords;
+    }
+  }
+
+  img {
+    /* autoprefixer: ignore next */
+    box-sizing: content-box;
+  }
+
+  img,
+  picture,
+  video,
+  canvas,
+  svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+
+  input,
+  button,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  textarea:-webkit-autofill,
+  textarea:-webkit-autofill:hover,
+  textarea:-webkit-autofill:focus,
+  select:-webkit-autofill,
+  select:-webkit-autofill:hover,
+  select:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0px 1000px transparent inset;
+    -webkit-text-fill-color: var(--color-foreground);
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
+  button {
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+
+  p {
+    overflow-wrap: break-word;
+  }
+
+  body {
+    font-family: var(--font-family-body);
+    font-size: var(--font-size);
+    line-height: var(--line-height);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: geometricPrecision;
+    tab-size: 2;
+    word-break: break-word;
+    /* overflow-x: clip; */
+  }
+
+  svg {
+    flex-shrink: 0;
+  }
+
+  a {
+    color: currentColor;
+    text-decoration: none;
+
+    &:not([href]) {
+      cursor: not-allowed;
+    }
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: rgb(var(--color-foreground-secondary));
+  }
+
+  ::selection {
+    color: var(--color-bg);
+    background-color: var(--color-foreground);
+  }
+
+  /**
+   * Remove the list style on navigation lists in all browsers (opinionated).
+   */
+
+  :where(ol, ul) {
+    list-style-type: none;
+    padding: 0;
+  }
+
+  /* Remove the default italic style on address elements (opinionated) */
+  :where(address) {
+    font-style: normal;
+  }
+
+  /**
+   * 1. Correct the inheritance and scaling of font size in all browsers.
+   * 2. Correct the odd `em` font sizing in all browsers.
+   * 3. Prevent overflow of the container in all browsers (opinionated).
+   */
+
+  :where(pre) {
+    font-family: monospace, monospace;
+    font-size: 1em;
+    overflow: auto;
+  }
+
+  /**
+   * Change the fill color to match the text color in all browsers (opinionated).
+   */
+
+  :where(svg:not([fill])) {
+    fill: currentColor;
+  }
+
+  /**
+   * 1. Remove the margin in Firefox and Safari.
+   * 3. Change the resize direction in all browsers (opinionated).
+   */
+
+  :where(textarea) {
+    margin: 0;
+    /* 1 */
+    resize: vertical;
+    /* 3 */
+  }
+
+  /**
+   * 1. Correct the odd appearance in Chrome, Edge, and Safari.
+   * 2. Correct the outline style in Safari.
+   */
+
+  :where([type='search' i]) {
+    appearance: textfield;
+    /* 1 */
+    outline-offset: -2px;
+    /* 2 */
+  }
+
+  /**
+   * Correct the cursor style of increment and decrement buttons in Safari.
+   */
+
+  ::-webkit-inner-spin-button,
+  ::-webkit-outer-spin-button {
+    height: auto;
+  }
+
+  /* Accessibility
+   * ========================================================================== */
+
+  /**
+   * Change the cursor on busy elements in all browsers (opinionated).
+   */
+
+  :where([aria-busy='true' i]) {
+    cursor: progress;
+  }
+
+  /*
+   * Change the cursor on disabled, not-editable, or otherwise
+   * inoperable elements in all browsers (opinionated).
+   */
+
+  :where([aria-disabled='true' i], [disabled]) {
+    cursor: not-allowed;
+  }
+
+  /*
+   * Change the display on visually hidden accessible elements
+   * in all browsers (opinionated).
+   */
+
+  :where([aria-hidden='false' i][hidden]) {
+    display: initial;
+  }
+
+  :where([aria-hidden='false' i][hidden]:not(:focus)) {
+    clip: rect(0, 0, 0, 0);
+    position: absolute;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+
+    *,
+    ::before,
+    ::after {
+      animation-delay: -1ms !important;
+      /* 1 */
+      animation-duration: 1ms !important;
+      /* 1 */
+      animation-iteration-count: 1 !important;
+      /* 1 */
+      background-attachment: initial !important;
+      /* 2 */
+      scroll-behavior: auto !important;
+      /* 3 */
+      transition-delay: 0s !important;
+      /* 4 */
+      transition-duration: 0s !important;
+      /* 4 */
+    }
+  }
+
+  /* Typography Baseline Rules */
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    text-wrap: balance;
+    overflow-wrap: break-word;
+    font-family: var(--font-family-heading, var(--font-family));
+    line-height: var(--line-height-snug);
+  }
+
+  h1 {
+    max-width: var(--measure-heading-1);
+  }
+
+  h2 {
+    max-width: var(--measure-heading-2);
+  }
+
+  h3 {
+    max-width: var(--measure-heading-3);
+  }
+
+  h4 {
+    max-width: var(--measure-heading-4);
+  }
+
+  h5 {
+    max-width: var(--measure-heading-5);
+  }
+
+  h6 {
+    max-width: var(--measure-heading-6);
+  }
+
+  p {
+    text-wrap: pretty;
+    letter-spacing: 0.015em;
+  }
+
+
+  :where(a,
+    button,
+    input,
+    select,
+    textarea,
+    summary,
+    [role='button'],
+    [role='link'],
+    [tabindex]:not([tabindex='-1'])):focus-visible {
+    outline: 2px solid var(--color-purple);
+    outline-offset: 3px;
+    box-shadow: 0 0 0 6px color-mix(in oklab, var(--color-purple) 24%, transparent);
+  }
+
+  :where(a,
+    button,
+    input,
+    select,
+    textarea,
+    summary,
+    [role='button'],
+    [role='link'],
+    [tabindex]:not([tabindex='-1'])):focus:not(:focus-visible) {
+    outline: none;
+    box-shadow: none;
+  }
+}

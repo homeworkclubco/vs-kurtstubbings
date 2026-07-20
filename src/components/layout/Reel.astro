@@ -1,0 +1,93 @@
+---
+import type { HTMLAttributes } from 'astro/types'
+import type { SpaceToken } from '../../types'
+
+interface Props extends HTMLAttributes<'div'> {
+  as?: string
+  space?: SpaceToken
+  snap?: 'start' | 'center' | 'end'
+  align?: boolean
+  pb?: SpaceToken
+}
+
+const {
+  as: Tag = 'div',
+  space,
+  snap = 'start',
+  align = true,
+  pb,
+  class: className,
+  ...rest
+} = Astro.props
+
+const attributes = {
+  'data-gap': space,
+  'data-pb': pb,
+  'data-snap': snap !== 'start' ? snap : undefined,
+  'data-no-align': !align ? '' : undefined,
+}
+---
+
+<Tag class:list={['reel', className]} {...attributes} {...rest}>
+  <slot />
+</Tag>
+
+<style>
+  @layer base {
+    .reel {
+      --_offset: calc(
+        (
+            (
+                100% -
+                  (
+                    min(var(--container-max-width, 110rem), 100%) +
+                      (var(--container-padding, var(--space-md-lg)) * 2)
+                  )
+              ) /
+              2
+          ) +
+          (var(--container-padding, var(--space-md-lg)) * 2)
+      );
+
+      display: flex;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+      scrollbar-width: none;
+
+      &.is-animating {
+        scroll-snap-type: none !important;
+      }
+      -ms-overflow-style: none;
+      padding-inline: var(--_offset);
+      scroll-padding-inline-start: var(--_offset);
+
+      &::-webkit-scrollbar {
+        display: none;
+      }
+
+      &[data-no-align] {
+        padding-inline: 0;
+        scroll-padding-inline-start: 0;
+      }
+
+      > :global(*) {
+        flex-shrink: 0;
+        scroll-snap-align: var(--_snap, start);
+        scroll-snap-stop: always;
+        width: var(--reel-item-width, auto);
+      }
+
+      &[data-snap='center'] {
+        --_snap: center;
+      }
+
+      &[data-snap='end'] {
+        --_snap: end;
+      }
+    }
+  }
+</style>

@@ -1,0 +1,172 @@
+---
+import Heading from "@components/display/Heading.astro";
+import Container from "@components/layout/Container.astro";
+import Section from "@components/layout/Section.astro";
+import Sidebar from "@components/layout/Sidebar.astro";
+import Stack from "@components/layout/Stack.astro";
+import { getCollection } from "astro:content";
+import type { InferEntrySchema } from "astro:content";
+
+type Section_ = NonNullable<InferEntrySchema<"pages">["sections"]>[number];
+
+interface Props {
+  block: Extract<Section_, { type: "testimonialsBlock" }>;
+  index: number;
+}
+
+const { block } = Astro.props;
+const { heading = "Testimonials", order = [] } = block;
+
+const all = await getCollection("testimonials");
+const byUuid = new Map(
+  all.filter(e => e.data.uuid).map(entry => [entry.data.uuid!, entry])
+);
+
+const ordered = order
+  .map(uuid => byUuid.get(uuid))
+  .filter((entry): entry is (typeof all)[number] => Boolean(entry));
+
+const items = ordered.length > 0 ? ordered : all;
+---
+
+<Section class="TestimonialsBlock" colorScheme="dark" padding="xl">
+  <Container>
+    <Sidebar
+      class="testimonials-layout"
+      side="right"
+      sideWidth="600px"
+      contentMin="50%"
+      space="xl"
+    >
+      <div class="sticky-col heading-col">
+        <Stack space="xl" align="start">
+          <Heading
+            as="h2"
+            font="heading-alt"
+            size="heading-lg"
+            color="accent"
+            wrap="wrap"
+          >
+            {heading}
+          </Heading>
+        </Stack>
+      </div>
+
+      <Stack as="ol" space="lg" class="testimonials-list">
+        {
+          items.map((entry, index) => (
+            <li class="testimonial-card" data-index={index}>
+              <Stack space="md">
+                <div class="stars" aria-label="5 out of 5 stars">
+                  {Array.from({ length: 5 }).map(() => (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      aria-hidden="true"
+                      class="star"
+                    >
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  ))}
+                </div>
+
+                <blockquote class="quote">
+                  <p>"{entry.data.quote}"</p>
+                </blockquote>
+
+                <div class="attribution">
+                  {entry.data.logo && (
+                    <img
+                      src={entry.data.logo}
+                      alt={entry.data.logoAlt ?? entry.data.author}
+                      class="attribution-logo"
+                    />
+                  )}
+                  <div class="attribution-text">
+                    <span class="attribution-name">{entry.data.author}</span>
+                    {entry.data.role && (
+                      <span class="attribution-role">{entry.data.role}</span>
+                    )}
+                  </div>
+                </div>
+              </Stack>
+            </li>
+          ))
+        }
+      </Stack>
+    </Sidebar>
+  </Container>
+</Section>
+
+<style>
+  .TestimonialsBlock {
+    :global(.heading) {
+      line-height: 1;
+    }
+
+    .sticky-col {
+      position: sticky;
+      top: 25%;
+      height: fit-content;
+      align-self: flex-start;
+    }
+
+    .testimonials-list {
+      list-style: none;
+    }
+
+    .testimonial-card {
+      border: 1px solid var(--color-border);
+      padding: var(--space-lg);
+      background-color: var(--color-bg-alt);
+      position: sticky;
+      top: 25%;
+    }
+
+    .stars {
+      display: flex;
+
+      .star {
+        width: 2rem;
+        height: 2rem;
+        color: var(--color-accent);
+      }
+    }
+
+    .quote p {
+      font-size: var(--font-size-1);
+      line-height: var(--line-height);
+      color: var(--color-foreground);
+    }
+
+    .attribution {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    .attribution-logo {
+      width: 4rem;
+      height: 4rem;
+      border-radius: 50%;
+      object-fit: contain;
+      flex-shrink: 0;
+      border: 1px solid var(--color-border);
+    }
+
+    .attribution-text {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .attribution-name {
+      font-weight: var(--font-weight-bold);
+    }
+
+    .attribution-role {
+      font-size: var(--font-size--1);
+      color: var(--color-foreground-secondary);
+    }
+  }
+</style>

@@ -1,0 +1,137 @@
+---
+// No server-side props — fully client-side
+//
+// Google Consent Mode v2 is implemented below. No GTM configuration is needed
+// since GA4 is loaded directly via gtag.js. The consent signals are set in
+// window.dataLayer before gtag.js evaluates them, so GA4 automatically respects
+// the user's choices.
+//
+// To enable behavioural modelling (estimates traffic from non-consenting users):
+//   GA4 Admin → Data collection and modification → Data collection → enable modelling
+---
+
+<!-- Google Consent Mode v2: set defaults BEFORE gtag.js loads -->
+<script is:inline>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() {
+    dataLayer.push(arguments);
+  }
+  // Deny all by default — vanilla-cookieconsent will update these on consent
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied",
+    wait_for_update: 500,
+  });
+  gtag("js", new Date());
+  gtag("config", "G-6B61VS15KQ");
+</script>
+
+<!-- Google tag (gtag.js) — reads consent defaults from dataLayer on init -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-6B61VS15KQ"
+></script>
+
+<!-- Cookie consent UI and consent state management -->
+<script>
+  import * as CookieConsent from "vanilla-cookieconsent";
+  import "vanilla-cookieconsent/dist/cookieconsent.css";
+
+  function updateGoogleConsent() {
+    const analytics = CookieConsent.acceptedCategory("analytics");
+    const marketing = CookieConsent.acceptedCategory("marketing");
+    // @ts-ignore — gtag is defined in the inline script above
+    window.gtag?.("consent", "update", {
+      analytics_storage: analytics ? "granted" : "denied",
+      ad_storage: marketing ? "granted" : "denied",
+      ad_user_data: marketing ? "granted" : "denied",
+      ad_personalization: marketing ? "granted" : "denied",
+    });
+  }
+
+  await CookieConsent.run({
+    guiOptions: {
+      consentModal: {
+        layout: "box inline",
+        position: "bottom left",
+      },
+    },
+
+    categories: {
+      necessary: {
+        enabled: true,
+        readOnly: true,
+      },
+      analytics: {},
+      marketing: {},
+    },
+
+    language: {
+      default: "en",
+      translations: {
+        en: {
+          consentModal: {
+            title: "We use cookies",
+            description:
+              "We use cookies to enhance your experience and analyse site traffic. You can choose which categories to allow.",
+            acceptAllBtn: "Accept all",
+            acceptNecessaryBtn: "Reject all",
+            showPreferencesBtn: "Manage preferences",
+            footer: '<a href="/privacy-policy">Privacy Policy</a>',
+          },
+          preferencesModal: {
+            title: "Cookie preferences",
+            acceptAllBtn: "Accept all",
+            acceptNecessaryBtn: "Reject all",
+            savePreferencesBtn: "Save preferences",
+            closeIconLabel: "Close",
+            sections: [
+              {
+                title: "Your privacy choices",
+                description:
+                  "We use cookies to ensure basic functionality and to improve your experience. You can opt in or out of each category at any time.",
+              },
+              {
+                title: "Strictly necessary",
+                description:
+                  "Essential cookies required for the website to function. These cannot be disabled.",
+                linkedCategory: "necessary",
+              },
+              {
+                title: "Analytics",
+                description:
+                  "Help us understand how visitors use our site. All data is anonymised.",
+                linkedCategory: "analytics",
+              },
+              {
+                title: "Marketing",
+                description:
+                  "Used to show personalised advertising based on your browsing activity.",
+                linkedCategory: "marketing",
+              },
+              {
+                title: "More information",
+                description:
+                  'For any questions about our cookie policy, please <a href="/contact">contact us</a>.',
+              },
+            ],
+          },
+        },
+      },
+    },
+
+    onConsent() {
+      updateGoogleConsent();
+    },
+    onChange() {
+      updateGoogleConsent();
+    },
+  });
+
+  // Apply built-in dark theme (site is permanently dark)
+  document.getElementById("cc-main")?.classList.add("cc--darkmode");
+
+  // Expose global helper so any element can open the preferences modal:
+  // <button onclick="window.openCookieSettings()">Cookie settings</button>
+  window.openCookieSettings = () => CookieConsent.showPreferences();
+</script>

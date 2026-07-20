@@ -1,0 +1,22 @@
+---
+import OverlapHeading from "@components/display/OverlapHeading.astro";
+import Container from "@components/layout/Container.astro";
+import Section from "@components/layout/Section.astro";
+import type { InferEntrySchema } from "astro:content";
+
+type Section_ = NonNullable<InferEntrySchema<"pages">["sections"]>[number];
+
+interface Props {
+  block: Extract<Section_, { type: "headingBlock" }>;
+  index: number;
+}
+
+const { block } = Astro.props;
+const { heading, subtitle, id, pt = "xl", pb = "xl" } = block;
+---
+
+<Section id={id} class="HeadingBlock" colorScheme="dark" pt={pt} pb={pb}>
+  <Container>
+    <OverlapHeading heading={heading} subtitle={subtitle} />
+  </Container>
+</Section>

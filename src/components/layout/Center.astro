@@ -1,0 +1,56 @@
+---
+import type { HTMLAttributes } from "astro/types";
+
+interface Props extends HTMLAttributes<"div"> {
+  as?: string;
+  /** Minimum block size; helps the center fill its parent. */
+  minHeight?: string;
+  /** Shrink-wrap the wrapper instead of stretching to full width. */
+  intrinsic?: boolean;
+  align?: "start" | "center" | "end" | "stretch";
+  justify?: "start" | "center" | "end" | "between" | "around";
+}
+
+const {
+  as: Tag = "div",
+  minHeight = "100%",
+  intrinsic = false,
+  align = "center",
+  justify = "center",
+  class: className = "",
+  style,
+  ...rest
+} = Astro.props;
+
+const attributes = {
+  "data-align": align,
+  "data-justify": justify,
+  "data-intrinsic": intrinsic ? "" : undefined,
+};
+
+const vars = {
+  "--center-min-height": minHeight,
+};
+---
+
+<Tag class:list={["center", className]} style={[vars, style]} {...attributes} {...rest}>
+  <slot />
+</Tag>
+
+<style>
+  @layer base {
+    .center {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-block-size: var(--center-min-height);
+    }
+
+    [data-intrinsic] {
+      width: fit-content;
+      min-block-size: auto;
+      margin-inline: auto;
+    }
+  }
+</style>

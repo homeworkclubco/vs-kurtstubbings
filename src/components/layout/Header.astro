@@ -1,0 +1,350 @@
+---
+import Button from "../actions/Button.astro";
+import Logo from "../svg/Logo.astro";
+import Cluster from "./Cluster.astro";
+import Container from "./Container.astro";
+import Section from "./Section.astro";
+
+const navLinks = [
+  { href: "/work", label: "Work" },
+  { href: "/about", label: "About" },
+  { href: "/writing", label: "Writing" },
+  { href: "/contact", label: "Contact" },
+];
+
+const mobileNavLinksHtml = navLinks
+  .map(
+    link =>
+      `<li><a href="${link.href}" @click="menuOpen = false">${link.label}</a></li>`
+  )
+  .join("");
+---
+
+<Section
+  as="header"
+  class="site-header"
+  colorScheme="light"
+  x-data="{
+    menuOpen: false,
+    isScrolled: false,
+    syncScrollState() {
+      this.isScrolled = window.scrollY > 100;
+    },
+    syncHeaderHeight() {
+      document.documentElement.style.setProperty('--header-height', this.$el.offsetHeight + 'px');
+    },
+    init() {
+      this.$watch('menuOpen', value => {
+        document.body.style.overflow = value ? 'hidden' : '';
+      });
+
+      this.syncScrollState();
+      this.syncHeaderHeight();
+      window.addEventListener('scroll', () => this.syncScrollState(), { passive: true });
+      window.addEventListener('resize', () => this.syncHeaderHeight(), { passive: true });
+    },
+  }"
+  :data-scrolled="isScrolled.toString()"
+  :class="{ 'is-scrolled': isScrolled }"
+>
+  <Container>
+    <Cluster justify="start" class="start">
+      <a href="/" class="logo" aria-label="Home">
+        <Logo />
+      </a>
+    </Cluster>
+
+    <!-- <Cluster justify="center" class="middle" /> -->
+
+    <Cluster justify="end" class="end">
+      <nav class="desktop-nav">
+        <Cluster as="ul" noWrap>
+          {
+            navLinks.map(link => (
+              <li>
+                <a href={link.href}>{link.label}</a>
+              </li>
+            ))
+          }
+        </Cluster>
+        <!-- <Button variant="primary" href="/#contact">Get in Touch</Button> -->
+      </nav>
+
+      <button
+        class="menu-toggle"
+        @click="menuOpen = true; $nextTick(() => $refs.closeBtn.focus())"
+        :aria-expanded="menuOpen.toString()"
+        aria-controls="mobile-menu"
+        aria-label="Open navigation menu"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          aria-hidden="true"
+        >
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+    </Cluster>
+  </Container>
+
+  <template x-teleport="body">
+  <div
+    data-color-scheme="dark"
+    id="mobile-menu"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Site navigation"
+    x-show="menuOpen"
+    x-cloak
+    @keydown.escape.window="menuOpen = false"
+    x-transition:enter="mobile-nav-enter"
+    x-transition:enter-start="mobile-nav-from"
+    x-transition:enter-end="mobile-nav-to"
+    x-transition:leave="mobile-nav-leave"
+    x-transition:leave-start="mobile-nav-to"
+    x-transition:leave-end="mobile-nav-from"
+    class="mobile-nav"
+  >
+    <div class="mobile-nav-inner">
+      <div class="mobile-nav-header">
+        <a href="/" aria-label="Home" class="mobile-nav-logo">
+          <Logo />
+        </a>
+
+        <button
+          x-ref="closeBtn"
+          class="mobile-nav-close"
+          @click="menuOpen = false"
+          aria-label="Close navigation menu"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            aria-hidden="true"
+          >
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <nav class="mobile-nav-links" aria-label="Main navigation">
+        <ul set:html={mobileNavLinksHtml} />
+      </nav>
+
+      <div class="mobile-nav-footer">
+        <Button href="/#contact" fullWidth @click="menuOpen = false"
+          >Get in Touch</Button
+        >
+      </div>
+    </div>
+  </div>
+  </template>
+</Section>
+
+<style>
+  .site-header {
+    position: fixed;
+    width: 100%;
+    top: 0;
+    z-index: 100;
+    background-color: transparent;
+    transition: background-color 300ms var(--ease-out, ease);
+
+    &[data-scrolled="true"] {
+      /* background-color: color-mix(in oklab, var(--color-bg) 92%, transparent); */
+      background-color: var(--color-bg);
+    }
+  }
+
+  .container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    padding-block: var(--space-md);
+  }
+
+  .start {
+    .desktop-nav {
+      nav a {
+        font-size: var(--font-size-0);
+      }
+    }
+  }
+
+  .logo {
+    text-decoration: none;
+    color: var(--color-foreground);
+  }
+
+  nav {
+    --_item-padding: var(--space-xs);
+
+    li {
+      &:last-child {
+        margin-inline-end: calc(var(--_item-padding) * -1);
+      }
+    }
+
+    a {
+      color: var(--color-foreground);
+      padding-inline: var(--_item-padding);
+
+      &:hover {
+        &:hover {
+          color: var(--color-accent);
+        }
+      }
+    }
+  }
+
+  .menu-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: var(--color-foreground);
+    cursor: pointer;
+    padding: var(--space-2xs);
+
+    svg {
+      width: 1.75rem;
+      height: 1.75rem;
+    }
+
+    &:hover {
+      color: var(--color-accent);
+    }
+  }
+
+  @media (--md) {
+    .desktop-nav,
+    .desktop-cta {
+      display: none;
+    }
+
+    .menu-toggle {
+      display: flex;
+    }
+  }
+</style>
+
+<style>
+  /* Transition helpers applied by Alpine x-transition */
+  .mobile-nav-enter,
+  .mobile-nav-leave {
+    transition:
+      transform 480ms cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 380ms ease;
+  }
+
+  .mobile-nav-from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  .mobile-nav-to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+
+  /* Full-screen overlay */
+  .mobile-nav {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    top: 0;
+
+    .mobile-nav-inner {
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
+      padding: var(--space-sm) var(--space-md) var(--space-xl);
+    }
+
+    /* Top bar — logo + close */
+    .mobile-nav-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-block: var(--space-sm);
+    }
+
+    .mobile-nav-close {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      color: currentColor;
+      cursor: pointer;
+      padding: var(--space-2xs);
+
+      svg {
+        width: 2rem;
+        height: 2rem;
+      }
+
+      &:hover {
+        opacity: 0.6;
+      }
+    }
+
+    /* Nav links */
+    .mobile-nav-links {
+      flex: 1;
+      display: flex;
+      align-items: flex-start;
+      padding-block: var(--space-xl);
+
+      ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-lg);
+      }
+
+      a {
+        display: block;
+        font-family: var(--font-family-heading-alt);
+        font-size: var(--font-size-5);
+        font-weight: 900;
+        line-height: 1;
+        text-transform: uppercase;
+        color: currentColor;
+        text-decoration: none;
+        transition: opacity 200ms ease;
+
+        &:hover {
+          opacity: 0.5;
+        }
+      }
+    }
+
+    /* Bottom CTA */
+    .mobile-nav-footer {
+      padding-top: var(--space-lg);
+    }
+  }
+
+  header + :global(.section) {
+    margin-top: var(--header-height);
+  }
+</style>

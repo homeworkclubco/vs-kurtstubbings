@@ -1,0 +1,131 @@
+---
+import Button from "@components/actions/Button.astro";
+import Heading from "@components/display/Heading.astro";
+import OverlapHeading from "@components/display/OverlapHeading.astro";
+import Prose from "@components/display/Prose.astro";
+import Cluster from "@components/layout/Cluster.astro";
+import Container from "@components/layout/Container.astro";
+import Frame from "@components/layout/Frame.astro";
+import Grid from "@components/layout/Grid.astro";
+import Icon from "@components/layout/Icon.astro";
+import Section from "@components/layout/Section.astro";
+import Stack from "@components/layout/Stack.astro";
+import { ArrowRight } from "@lucide/astro";
+import { Image } from "astro:assets";
+import type { InferEntrySchema } from "astro:content";
+import { getCollection } from "astro:content";
+
+type Section_ = NonNullable<InferEntrySchema<"pages">["sections"]>[number];
+
+interface Props {
+  block: Extract<Section_, { type: "caseStudyGridBlock" }>;
+  index: number;
+}
+
+const { block } = Astro.props;
+const {
+  id,
+  heading = "Projects",
+  subtitle,
+  order = [],
+  showLoadMore = false,
+} = block;
+
+const all = await getCollection("caseStudies");
+const byUuid = new Map(
+  all.filter(e => e.data.uuid).map(entry => [entry.data.uuid!, entry])
+);
+
+const ordered = order
+  .map(uuid => byUuid.get(uuid))
+  .filter((entry): entry is (typeof all)[number] => Boolean(entry));
+
+const caseStudies =
+  ordered.length > 0
+    ? ordered
+    : all.sort((a, b) => a.data.title.localeCompare(b.data.title));
+---
+
+<Section id={id} class="CaseStudyGridBlock" padding="xl">
+  <Container>
+    <Stack space="xl">
+      {heading && <OverlapHeading heading={heading} subtitle={subtitle} />}
+
+      <Grid
+        as="ul"
+        minItemWidth="var(--case-study-grid-min-item-width)"
+        space="2xl"
+        class="case-study-grid"
+      >
+        {
+          caseStudies.map(entry => (
+            <li>
+              <Stack
+                as="a"
+                href={`/case-studies/${entry.id.replace(/\.mdx?$/, "")}`}
+                class="case-study-card"
+              >
+                <Frame ratio="16/9">
+                  <Image
+                    src={entry.data.featuredImage.src}
+                    alt={entry.data.featuredImage.alt || entry.data.title}
+                    width="1200"
+                  />
+                </Frame>
+                <Stack space="md" class="case-study-card-body">
+                  <Heading as="h2" font="heading" size="3">
+                    {entry.data.title}
+                  </Heading>
+                  {entry.data.excerpt && (
+                    <Prose class="case-study-excerpt">
+                      <p class="">{entry.data.excerpt}</p>
+                    </Prose>
+                  )}
+                  <Button as="span" variant="secondary" size="sm">
+                    View Project{" "}
+                    <Icon>
+                      <ArrowRight />
+                    </Icon>
+                  </Button>
+                </Stack>
+              </Stack>
+            </li>
+          ))
+        }
+      </Grid>
+      {
+        showLoadMore && (
+          <Cluster justify="center">
+            <Button as="a" href="/case-studies" variant="secondary">
+              Load More
+            </Button>
+          </Cluster>
+        )
+      }
+    </Stack>
+  </Container>
+</Section>
+
+<style>
+  .case-study-grid {
+    --case-study-grid-min-item-width: ruler.fluid(300, 530);
+  }
+
+  .case-study-card {
+    img {
+      transition: transform 0.5s var(--ease-out-cubic);
+    }
+
+    &:hover img {
+      transform: scale(1.05);
+    }
+  }
+
+  .case-study-card-body {
+    /* padding: var(--space-md) var(--space-md) var(--space-lg); */
+  }
+
+  .case-study-excerpt {
+    margin-inline: 0;
+  }
+</style>

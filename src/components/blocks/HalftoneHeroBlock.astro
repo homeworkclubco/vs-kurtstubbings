@@ -1,0 +1,730 @@
+---
+import type { InferEntrySchema } from "astro:content";
+import Cluster from "@components/layout/Cluster.astro";
+
+type Section_ = NonNullable<InferEntrySchema<"pages">["sections"]>[number];
+
+interface Props {
+  block: Extract<Section_, { type: "textBlock" }>;
+  index: number;
+}
+
+const { block, index } = Astro.props;
+const { id, heading } = block;
+
+/* ------------------------------------------------------------------ *
+ *  CONFIG — safe to tweak, no shader edits needed
+ * ------------------------------------------------------------------ */
+const CONFIG = {
+  // palette (process inks, subtractive over paper)
+  paper: "#FAF9F6", // background / paper
+  ink: "#111111", // K channel — the type at rest
+  cyan: "#00AEEF",
+  magenta: "#EC008C",
+  yellow: "#FFF200",
+  ultramarine: "#2E3DFF", // the full stop
+
+  // halftone
+  size: 0.17, // cell size. 0 = fine / high fidelity, 1 = coarse
+  contrast: 1.0, // image contrast, 0 to 2
+  softness: 1, // dot edge softness, 0 to 1
+  gridNoise: 0.5, // jitter of the dot grid, 0 to 1
+  type: "dots", // "dots" | "ink" | "sharp"
+
+  // per-channel dot tuning, -1 to 1
+  floodC: 0,
+  floodM: 0,
+  floodY: 0,
+  floodK: 0, // flat size added everywhere
+  gainC: 0.3,
+  gainM: 0,
+  gainY: 0.2,
+  gainK: 0, // proportional size gain
+
+  // grain / finish
+  grainSize: 0.5, // grain texture scale, 0 to 1
+  grainMixer: 0.12, // grain affecting dot size, 0 to 1
+  grainOverlay: 0.05, // grain overlay on the final output, 0 to 1
+
+  // cursor bloom (the interaction)
+  colourMix: 0.25, // how much K recedes under the cursor, 0 to 1
+  bloomRadius: 260, // radius of the colour bloom, in CSS px
+  bloomStrength: 0.5, // how much the C/M/Y dots grow under the cursor
+  gridNoiseBloom: 1, // extra grid jitter stirred up under the cursor, 0 to 1
+
+  // type
+  fontWeight: 400,
+  fontVw: 0.11, // heading size as a fraction of viewport width
+  maxFontPx: 80, // cap on the heading size in CSS px
+  wrapCh: 15, // wrap the heading at this many characters
+
+  // responsive — keep the type legible on small screens (at or below breakpoint)
+  breakpoint: 640, // px viewport width at/below which mobile values apply
+  maxDprMobile: 3, // render at full device resolution on mobile for crisp dots
+  fontVwMobile: 0.12, // larger relative type on mobile
+  maxFontPxMobile: 60, // cap on the heading size on mobile
+  sizeMobile: 0.005, // finer dots so thin strokes survive
+  softnessMobile: 0.3, // crisper dot edges
+  gridNoiseMobile: 0.06, // calmer grid — less ragged stroke edges
+  contrastMobile: 1.3, // push the type more solid
+  grainMixerMobile: 0.0, // no grain eating into dot size (no stroke dropouts)
+  grainOverlayMobile: 0.05, // barely-there paper speckle
+};
+---
+
+<section class="HalftoneHeroBlock" id={id} data-index={index}>
+  <canvas class="HalftoneHeroBlock__canvas" aria-hidden="true"></canvas>
+
+  <div class="HalftoneHeroBlock__frame">
+    <h1 class="sr-only">{heading}.</h1>
+
+    <Cluster as="footer" class="HalftoneHeroBlock__footer" space="lg">
+      <span>Nestled in the Chilterns, Buckinghamshire</span>
+      <a
+        href="https://www.linkedin.com/in/kurtstubbings/"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="link">Connect on LinkedIn</a
+      >
+    </Cluster>
+  </div>
+</section>
+
+<style
+  define:vars={{
+    paper: CONFIG.paper,
+    ink: CONFIG.ink,
+    ultramarine: CONFIG.ultramarine,
+  }}
+>
+  .HalftoneHeroBlock {
+    position: relative;
+    min-height: 100svh;
+    overflow: hidden;
+    color: var(--color-foreground);
+  }
+  .HalftoneHeroBlock__canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    z-index: 0;
+  }
+  .HalftoneHeroBlock__frame {
+    position: relative;
+    z-index: 1;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    pointer-events: none; /* let the cursor drive the shader underneath */
+    padding-block: var(--space-md);
+  }
+  .HalftoneHeroBlock__frame a {
+    pointer-events: auto;
+  }
+  .HalftoneHeroBlock__dot {
+    color: var(--color-accent);
+  }
+</style>
+
+<script define:vars={{ CONFIG, heading }}>
+  (function () {
+    const root = document.querySelector(".HalftoneHeroBlock");
+    if (!root) return;
+    const canvas = root.querySelector(".HalftoneHeroBlock__canvas");
+    const gl = canvas.getContext("webgl2", { antialias: false, alpha: false });
+    const reduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+    if (!gl) {
+      canvas.style.display = "none";
+      return;
+    }
+
+    const TYPES = { dots: 0, ink: 1, sharp: 2 };
+
+    // hex -> [r, g, b, a] in 0..1
+    const hexToRgba = h => {
+      const n = parseInt(h.replace("#", ""), 16);
+      return [
+        ((n >> 16) & 255) / 255,
+        ((n >> 8) & 255) / 255,
+        (n & 255) / 255,
+        1,
+      ];
+    };
+
+    // Fullscreen triangle. v_imageUV is top-left-origin UV, matching the way
+    // the heading is drawn into the offscreen text canvas below.
+    const VERT = `#version 300 es
+    out vec2 v_imageUV;
+    void main(){
+      vec2 pos = vec2(float((gl_VertexID & 1) * 4 - 1), float((gl_VertexID & 2) * 2 - 1));
+      gl_Position = vec4(pos, 0.0, 1.0);
+      vec2 uv = pos * 0.5 + 0.5;
+      v_imageUV = vec2(uv.x, 1.0 - uv.y);
+    }`;
+
+    // CMYK halftone (paper-design/shaders), adapted to run standalone:
+    //  - v_imageUV comes from the trivial vertex shader above
+    //  - declarePI is inlined
+    //  - a cursor bloom (u_mouse / u_bloomR / u_active) grows the C/M/Y dots
+    //    and lets K recede, so the type is solid ink at rest and blooms into
+    //    process colour under the pointer.
+    const FRAG = `#version 300 es
+    precision mediump float;
+
+    uniform sampler2D u_image;
+    uniform float u_imageAspectRatio;
+
+    uniform vec4 u_colorBack;
+    uniform vec4 u_colorC;
+    uniform vec4 u_colorM;
+    uniform vec4 u_colorY;
+    uniform vec4 u_colorK;
+    uniform float u_size;
+    uniform float u_contrast;
+    uniform float u_grainSize;
+    uniform float u_grainMixer;
+    uniform float u_grainOverlay;
+    uniform float u_gridNoise;
+    uniform float u_softness;
+    uniform float u_floodC;
+    uniform float u_floodM;
+    uniform float u_floodY;
+    uniform float u_floodK;
+    uniform float u_gainC;
+    uniform float u_gainM;
+    uniform float u_gainY;
+    uniform float u_gainK;
+    uniform float u_type;
+    uniform sampler2D u_noiseTexture;
+
+    // --- cursor bloom additions ---
+    uniform vec2 u_mouse;        // pointer position in image UV (top-left origin)
+    uniform float u_bloomR;      // bloom radius in vertical-UV units
+    uniform float u_active;      // 0 until the pointer has moved
+    uniform float u_reduced;     // prefers-reduced-motion
+    uniform float u_time;
+    uniform float u_bloomStrength;
+    uniform float u_colourMix;
+    uniform float u_gridNoiseBloom;  // extra grid jitter under the pointer
+
+    in vec2 v_imageUV;
+    out vec4 fragColor;
+
+    const float shiftC = -.5;
+    const float shiftM = -.25;
+    const float shiftY = .2;
+    const float shiftK = 0.;
+
+    const float cosC = 0.9659258;  const float sinC = 0.2588190;   // 15deg
+    const float cosM = 0.2588190;  const float sinM = 0.9659258;   // 75deg
+    const float cosY = 1.0;        const float sinY = 0.0;         // 0deg
+    const float cosK = 0.7071068;  const float sinK = 0.7071068;   // 45deg
+
+    #define PI 3.141592653589793
+
+    vec2 randomRG(vec2 p) {
+      vec2 uv = floor(p) / 100. + .5;
+      return texture(u_noiseTexture, fract(uv)).rg;
+    }
+    vec3 hash23(vec2 p) {
+      vec3 p3 = fract(vec3(p.xyx) * vec3(0.3183099, 0.3678794, 0.3141592)) + 0.1;
+      p3 += dot(p3, p3.yzx + 19.19);
+      return fract(vec3(p3.x * p3.y, p3.y * p3.z, p3.z * p3.x));
+    }
+
+    float sst(float edge0, float edge1, float x) {
+      return smoothstep(edge0, edge1, x);
+    }
+
+    vec3 valueNoise3(vec2 st) {
+      vec2 i = floor(st);
+      vec2 f = fract(st);
+      vec3 a = hash23(i);
+      vec3 b = hash23(i + vec2(1.0, 0.0));
+      vec3 c = hash23(i + vec2(0.0, 1.0));
+      vec3 d = hash23(i + vec2(1.0, 1.0));
+      vec2 u = f * f * (3.0 - 2.0 * f);
+      vec3 x1 = mix(a, b, u.x);
+      vec3 x2 = mix(c, d, u.x);
+      return mix(x1, x2, u.y);
+    }
+
+    float getUvFrame(vec2 uv, vec2 pad) {
+      float left   = smoothstep(-pad.x, 0., uv.x);
+      float right  = smoothstep(1. + pad.x, 1., uv.x);
+      float bottom = smoothstep(-pad.y, 0., uv.y);
+      float top    = smoothstep(1. + pad.y, 1., uv.y);
+      return left * right * bottom * top;
+    }
+
+    vec4 RGBAtoCMYK(vec4 rgba) {
+      float k = 1. - max(max(rgba.r, rgba.g), rgba.b);
+      float denom = 1. - k;
+      vec3 cmy = vec3(0.);
+      if (denom > 1e-5) {
+        cmy = (1. - rgba.rgb - vec3(k)) / denom;
+      }
+      return vec4(cmy, k) * rgba.a;
+    }
+
+    vec3 applyContrast(vec3 rgb) {
+      return clamp((rgb - 0.5) * u_contrast + 0.5, 0.0, 1.0);
+    }
+
+    float getCyan(vec4 rgba) {
+      vec3 c = clamp((rgba.rgb - 0.5) * u_contrast + 0.5, 0.0, 1.0);
+      float maxRGB = max(max(c.r, c.g), c.b);
+      return (maxRGB > 1e-5 ? (maxRGB - c.r) / maxRGB : 0.) * rgba.a;
+    }
+    float getMagenta(vec4 rgba) {
+      vec3 c = clamp((rgba.rgb - 0.5) * u_contrast + 0.5, 0.0, 1.0);
+      float maxRGB = max(max(c.r, c.g), c.b);
+      return (maxRGB > 1e-5 ? (maxRGB - c.g) / maxRGB : 0.) * rgba.a;
+    }
+    float getYellow(vec4 rgba) {
+      vec3 c = clamp((rgba.rgb - 0.5) * u_contrast + 0.5, 0.0, 1.0);
+      float maxRGB = max(max(c.r, c.g), c.b);
+      return (maxRGB > 1e-5 ? (maxRGB - c.b) / maxRGB : 0.) * rgba.a;
+    }
+    float getBlack(vec4 rgba) {
+      vec3 c = clamp((rgba.rgb - 0.5) * u_contrast + 0.5, 0.0, 1.0);
+      return (1. - max(max(c.r, c.g), c.b)) * rgba.a;
+    }
+
+    vec2 cellCenterPos(vec2 uv, vec2 cellOffset, float channelIdx, float gridNoise) {
+      vec2 cellCenter = floor(uv) + .5 + cellOffset;
+      return cellCenter + (randomRG(cellCenter + channelIdx * 50.) - .5) * gridNoise;
+    }
+
+    vec2 gridToImageUV(vec2 cellCenter, float cosA, float sinA, float shift, vec2 pad) {
+      vec2 uvGrid = mat2(cosA, -sinA, sinA, cosA) * (cellCenter - shift);
+      return uvGrid * pad + 0.5;
+    }
+
+    void colorMask(vec2 pos, vec2 cellCenter, float rad, float transparency, float grain, float channelAddon, float channelgain, float generalComp, bool isJoined, float bloom, inout float outMask) {
+      float dist = length(pos - cellCenter);
+
+      float radius = rad;
+      radius *= (1. + generalComp);
+      radius += (.15 + channelgain * radius);
+      radius = max(0., radius);
+      radius = mix(0., radius, transparency);
+      radius += channelAddon;
+      radius += bloom;
+      radius = max(0., radius);
+      radius *= (1. - grain);
+
+      float mask = 1. - sst(0., radius, dist);
+      if (isJoined) {
+        mask = pow(mask, 1.2);
+      } else {
+        mask = sst(.5 - .5 * u_softness, .51 + .49 * u_softness, mask);
+      }
+
+      mask *= mix(1., mix(.5, 1., 1.5 * radius), u_softness);
+      outMask += mask;
+    }
+
+    vec3 applyInk(vec3 paper, vec3 inkColor, float cov) {
+      vec3 inkEffect = mix(vec3(1.0), inkColor, clamp(cov, 0.0, 1.0));
+      return paper * inkEffect;
+    }
+
+    void main() {
+      vec2 uv = v_imageUV;
+
+      float cellsPerSide = mix(400.0, 7.0, pow(u_size, 0.7));
+      float cellSizeY = 1.0 / cellsPerSide;
+      vec2 pad = cellSizeY * vec2(1.0 / u_imageAspectRatio, 1.0);
+      vec2 uvGrid = (uv - .5) / pad;
+      float insideImageBox = getUvFrame(uv, pad);
+
+      float generalComp = .1 * u_softness + .1 * u_gridNoise + .1 * (1. - step(0.5, u_type)) * (1.5 - u_softness);
+
+      vec2 uvC = mat2(cosC, sinC, -sinC, cosC) * uvGrid + shiftC;
+      vec2 uvM = mat2(cosM, sinM, -sinM, cosM) * uvGrid + shiftM;
+      vec2 uvY = mat2(cosY, sinY, -sinY, cosY) * uvGrid + shiftY;
+      vec2 uvK = mat2(cosK, sinK, -sinK, cosK) * uvGrid + shiftK;
+
+      vec2 grainSize = mix(2000., 200., u_grainSize) * vec2(1., 1. / u_imageAspectRatio);
+      vec2 grainUV = (v_imageUV - .5) * grainSize + .5;
+      vec3 noiseValues = valueNoise3(grainUV);
+      float grain = sst(.55, 1., noiseValues.r);
+      grain *= u_grainMixer;
+
+      // --- cursor bloom: aspect-corrected falloff around the pointer ---
+      vec2 mrel = v_imageUV - u_mouse;
+      mrel.x *= u_imageAspectRatio;
+      float md = length(mrel);
+      float bloom = exp(-(md * md) / max(u_bloomR * u_bloomR, 1e-6)) * u_active;
+      if (u_reduced > 0.5) bloom = 0.30;
+      float hue = (u_reduced > 0.5) ? 0.0 : u_time * 0.12;
+      float bloomC = u_bloomStrength * bloom * (0.55 + 0.45 * sin(hue));
+      float bloomM = u_bloomStrength * bloom * (0.55 + 0.45 * sin(hue + 2.0944));
+      float bloomY = u_bloomStrength * bloom * (0.55 + 0.45 * sin(hue + 4.1888));
+      float bloomK = -u_colourMix * bloom;
+
+      // the pointer also stirs the grid jitter as it passes
+      float gridNoiseLocal = clamp(u_gridNoise + bloom * u_gridNoiseBloom, 0., 1.);
+
+      vec4 outMask = vec4(0.);
+      bool isJoined = u_type > 0.5;
+
+      if (u_type < 1.5) {
+        // dots or ink: per-cell colour sampling
+        for (int dy = -1; dy <= 1; dy++) {
+          for (int dx = -1; dx <= 1; dx++) {
+            vec2 cellOffset = vec2(float(dx), float(dy));
+
+            vec2 cellCenterC = cellCenterPos(uvC, cellOffset, 0., gridNoiseLocal);
+            vec4 texC = texture(u_image, gridToImageUV(cellCenterC, cosC, sinC, shiftC, pad));
+            colorMask(uvC, cellCenterC, getCyan(texC), insideImageBox * texC.a, grain, u_floodC, u_gainC, generalComp, isJoined, bloomC, outMask[0]);
+
+            vec2 cellCenterM = cellCenterPos(uvM, cellOffset, 1., gridNoiseLocal);
+            vec4 texM = texture(u_image, gridToImageUV(cellCenterM, cosM, sinM, shiftM, pad));
+            colorMask(uvM, cellCenterM, getMagenta(texM), insideImageBox * texM.a, grain, u_floodM, u_gainM, generalComp, isJoined, bloomM, outMask[1]);
+
+            vec2 cellCenterY = cellCenterPos(uvY, cellOffset, 2., gridNoiseLocal);
+            vec4 texY = texture(u_image, gridToImageUV(cellCenterY, cosY, sinY, shiftY, pad));
+            colorMask(uvY, cellCenterY, getYellow(texY), insideImageBox * texY.a, grain, u_floodY, u_gainY, generalComp, isJoined, bloomY, outMask[2]);
+
+            vec2 cellCenterK = cellCenterPos(uvK, cellOffset, 3., gridNoiseLocal);
+            vec4 texK = texture(u_image, gridToImageUV(cellCenterK, cosK, sinK, shiftK, pad));
+            colorMask(uvK, cellCenterK, getBlack(texK), insideImageBox * texK.a, grain, u_floodK, u_gainK, generalComp, isJoined, bloomK, outMask[3]);
+          }
+        }
+      } else {
+        // sharp: direct px colour sampling
+        vec4 tex = texture(u_image, uv);
+        tex.rgb = applyContrast(tex.rgb);
+        insideImageBox *= tex.a;
+        vec4 cmykOriginal = RGBAtoCMYK(tex);
+        for (int dy = -1; dy <= 1; dy++) {
+          for (int dx = -1; dx <= 1; dx++) {
+            vec2 cellOffset = vec2(float(dx), float(dy));
+
+            colorMask(uvC, cellCenterPos(uvC, cellOffset, 0., gridNoiseLocal), cmykOriginal.x, insideImageBox, grain, u_floodC, u_gainC, generalComp, isJoined, bloomC, outMask[0]);
+            colorMask(uvM, cellCenterPos(uvM, cellOffset, 1., gridNoiseLocal), cmykOriginal.y, insideImageBox, grain, u_floodM, u_gainM, generalComp, isJoined, bloomM, outMask[1]);
+            colorMask(uvY, cellCenterPos(uvY, cellOffset, 2., gridNoiseLocal), cmykOriginal.z, insideImageBox, grain, u_floodY, u_gainY, generalComp, isJoined, bloomY, outMask[2]);
+            colorMask(uvK, cellCenterPos(uvK, cellOffset, 3., gridNoiseLocal), cmykOriginal.w, insideImageBox, grain, u_floodK, u_gainK, generalComp, isJoined, bloomK, outMask[3]);
+          }
+        }
+      }
+
+      float shape;
+
+      float C = outMask[0];
+      float M = outMask[1];
+      float Y = outMask[2];
+      float K = outMask[3];
+
+      if (isJoined) {
+        float th = .5;
+        float sLeft = th * u_softness;
+        float sRight = (1. - th) * u_softness + .01;
+        C = smoothstep(th - sLeft - fwidth(C), th + sRight, C);
+        M = smoothstep(th - sLeft - fwidth(M), th + sRight, M);
+        Y = smoothstep(th - sLeft - fwidth(Y), th + sRight, Y);
+        K = smoothstep(th - sLeft - fwidth(K), th + sRight, K);
+      }
+
+      C *= u_colorC.a;
+      M *= u_colorM.a;
+      Y *= u_colorY.a;
+      K *= u_colorK.a;
+
+      vec3 ink = vec3(1.);
+      ink = applyInk(ink, u_colorK.rgb, K);
+      ink = applyInk(ink, u_colorC.rgb, C);
+      ink = applyInk(ink, u_colorM.rgb, M);
+      ink = applyInk(ink, u_colorY.rgb, Y);
+
+      shape = clamp(max(max(C, M), max(Y, K)), 0., 1.);
+
+      vec3 color = u_colorBack.rgb * u_colorBack.a;
+
+      float opacity = u_colorBack.a;
+      color = mix(color, ink, shape);
+      opacity += shape;
+      opacity = clamp(opacity, 0., 1.);
+
+      // animate only the final grain overlay, so the dot grid stays stable
+      vec3 noiseOverlay = valueNoise3(grainUV + u_time * 3.0);
+      float grainOverlay = mix(noiseOverlay.g, noiseOverlay.b, .5);
+      grainOverlay = pow(grainOverlay, 1.3);
+
+      float grainOverlayV = grainOverlay * 2. - 1.;
+      vec3 grainOverlayColor = vec3(step(0., grainOverlayV));
+      float grainOverlayStrength = u_grainOverlay * abs(grainOverlayV);
+      grainOverlayStrength = pow(grainOverlayStrength, .8);
+      color = mix(color, grainOverlayColor, .5 * grainOverlayStrength);
+
+      opacity += .5 * grainOverlayStrength;
+      opacity = clamp(opacity, 0., 1.);
+
+      fragColor = vec4(color, opacity);
+    }`;
+
+    function compile(type, src) {
+      const s = gl.createShader(type);
+      gl.shaderSource(s, src);
+      gl.compileShader(s);
+      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS))
+        console.error(gl.getShaderInfoLog(s));
+      return s;
+    }
+    const prog = gl.createProgram();
+    gl.attachShader(prog, compile(gl.VERTEX_SHADER, VERT));
+    gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FRAG));
+    gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+      console.error(gl.getProgramInfoLog(prog));
+      canvas.style.display = "none";
+      return;
+    }
+    gl.useProgram(prog);
+    gl.bindVertexArray(gl.createVertexArray());
+
+    const U = n => gl.getUniformLocation(prog, n);
+
+    // static config uniforms, set once
+    gl.uniform4fv(U("u_colorBack"), hexToRgba(CONFIG.paper));
+    gl.uniform4fv(U("u_colorC"), hexToRgba(CONFIG.cyan));
+    gl.uniform4fv(U("u_colorM"), hexToRgba(CONFIG.magenta));
+    gl.uniform4fv(U("u_colorY"), hexToRgba(CONFIG.yellow));
+    gl.uniform4fv(U("u_colorK"), hexToRgba(CONFIG.ink));
+    gl.uniform1f(U("u_grainSize"), CONFIG.grainSize);
+    gl.uniform1f(U("u_floodC"), CONFIG.floodC);
+    gl.uniform1f(U("u_floodM"), CONFIG.floodM);
+    gl.uniform1f(U("u_floodY"), CONFIG.floodY);
+    gl.uniform1f(U("u_floodK"), CONFIG.floodK);
+    gl.uniform1f(U("u_gainC"), CONFIG.gainC);
+    gl.uniform1f(U("u_gainM"), CONFIG.gainM);
+    gl.uniform1f(U("u_gainY"), CONFIG.gainY);
+    gl.uniform1f(U("u_gainK"), CONFIG.gainK);
+    gl.uniform1f(U("u_type"), TYPES[CONFIG.type] ?? 0);
+    gl.uniform1f(U("u_bloomStrength"), CONFIG.bloomStrength);
+    gl.uniform1f(U("u_colourMix"), CONFIG.colourMix);
+    gl.uniform1f(U("u_gridNoiseBloom"), CONFIG.gridNoiseBloom);
+    gl.uniform1i(U("u_image"), 0);
+    gl.uniform1i(U("u_noiseTexture"), 1);
+
+    // responsive uniforms — set in resize() from the viewport width
+    const u_size = U("u_size"),
+      u_softness = U("u_softness"),
+      u_gridNoise = U("u_gridNoise"),
+      u_contrast = U("u_contrast"),
+      u_grainMixer = U("u_grainMixer"),
+      u_grainOverlay = U("u_grainOverlay");
+
+    const u_time = U("u_time"),
+      u_mouse = U("u_mouse"),
+      u_active = U("u_active"),
+      u_reduced = U("u_reduced"),
+      u_bloomR = U("u_bloomR"),
+      u_imageAspectRatio = U("u_imageAspectRatio");
+
+    // procedural randomizer texture for randomRG() — random RG per texel
+    function makeNoiseTexture() {
+      const S = 256;
+      const data = new Uint8Array(S * S * 4);
+      for (let i = 0; i < data.length; i++)
+        data[i] = Math.floor(Math.random() * 256);
+      const t = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, t);
+      gl.texImage2D(
+        gl.TEXTURE_2D,
+        0,
+        gl.RGBA,
+        S,
+        S,
+        0,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        data
+      );
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      return t;
+    }
+    const noiseTex = makeNoiseTexture();
+
+    // offscreen canvas: renders the heading as the source image (black ink on
+    // transparent paper, with an ultramarine full stop)
+    const tc = document.createElement("canvas");
+    const tctx = tc.getContext("2d");
+    const tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+    let dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const mouse = { u: 0.34, v: 0.5 }; // pointer in image UV (top-left origin)
+    let active = 0;
+
+    const fontFamily = getComputedStyle(root).fontFamily || "Arial, sans-serif";
+
+    // Resolve Container.astro's inline padding (--space-md-2xl, a viewport-
+    // dependent clamp) to CSS px by probing a matching element in the DOM.
+    const padProbe = document.createElement("div");
+    padProbe.style.cssText =
+      "position:absolute;visibility:hidden;pointer-events:none;padding-inline:var(--space-md-2xl);";
+    root.appendChild(padProbe);
+    const containerPadding = () =>
+      parseFloat(getComputedStyle(padProbe).paddingLeft) || 0;
+
+    function buildText() {
+      const w = window.innerWidth,
+        h = window.innerHeight;
+      tc.width = canvas.width;
+      tc.height = canvas.height;
+      const ctx = tctx;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, tc.width, tc.height);
+      ctx.scale(dpr, dpr);
+
+      // Match Container.astro: min(viewport, 110rem), centred, minus its
+      // inline padding — the type sits in the container's content box.
+      const rem =
+        parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+      const containerW = Math.min(w, 110 * rem);
+      const contentW = Math.max(0, containerW - containerPadding() * 2);
+      const center = w / 2;
+
+      const isMobile = w <= CONFIG.breakpoint;
+      const fontVw = isMobile ? CONFIG.fontVwMobile : CONFIG.fontVw;
+      const capPx = isMobile ? CONFIG.maxFontPxMobile : CONFIG.maxFontPx;
+      const fontPx = Math.min(w * fontVw, capPx);
+      ctx.font = `${CONFIG.fontWeight} ${fontPx}px ${fontFamily}`;
+      ctx.textBaseline = "alphabetic";
+      ctx.fillStyle = CONFIG.ink;
+
+      // wrap at 15ch (1ch = width of "0" in the current font), never wider
+      // than the container content box
+      const chW = ctx.measureText("0").width;
+      const wrapW = Math.min(contentW, CONFIG.wrapCh * chW);
+
+      const words = heading.split(" ");
+      const lines = [];
+      let cur = "";
+      for (const word of words) {
+        const test = cur ? cur + " " + word : word;
+        if (ctx.measureText(test).width > wrapW && cur) {
+          lines.push(cur);
+          cur = word;
+        } else cur = test;
+      }
+      if (cur) lines.push(cur);
+
+      const lineH = fontPx * 0.98;
+      const blockH = lines.length * lineH;
+      let y = (h - blockH) / 2 + fontPx * 0.8;
+      let lastW = 0,
+        lastBaseline = y;
+      for (let i = 0; i < lines.length; i++) {
+        const lw = ctx.measureText(lines[i]).width;
+        ctx.fillText(lines[i], center - lw / 2, y); // centre each line
+        if (i === lines.length - 1) {
+          lastW = lw;
+          lastBaseline = y;
+        }
+        y += lineH;
+      }
+
+      // the full stop trails the (centred) last line, in ultramarine so it
+      // halftones as blue at rest
+      const gap = fontPx * 0.02;
+      ctx.fillStyle = CONFIG.ultramarine;
+      ctx.fillText(".", center + lastW / 2 + gap, lastBaseline);
+
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, tc);
+    }
+
+    function resize() {
+      const isMobile = window.innerWidth <= CONFIG.breakpoint;
+      // render at full device resolution on mobile so fine dots stay crisp
+      dpr = Math.min(
+        window.devicePixelRatio || 1,
+        isMobile ? CONFIG.maxDprMobile : 2
+      );
+      const w = Math.floor(window.innerWidth * dpr);
+      const h = Math.floor(window.innerHeight * dpr);
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+      }
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      gl.uniform1f(u_imageAspectRatio, canvas.width / canvas.height);
+      // bloom radius: CSS px -> vertical-UV units
+      gl.uniform1f(u_bloomR, CONFIG.bloomRadius / window.innerHeight);
+
+      // responsive halftone: finer, crisper, calmer, higher-contrast, and much
+      // less grain on small screens so small type reads cleanly
+      const pick = (base, mobile) => (isMobile ? mobile : base);
+      gl.uniform1f(u_size, pick(CONFIG.size, CONFIG.sizeMobile));
+      gl.uniform1f(u_softness, pick(CONFIG.softness, CONFIG.softnessMobile));
+      gl.uniform1f(u_gridNoise, pick(CONFIG.gridNoise, CONFIG.gridNoiseMobile));
+      gl.uniform1f(u_contrast, pick(CONFIG.contrast, CONFIG.contrastMobile));
+      gl.uniform1f(
+        u_grainMixer,
+        pick(CONFIG.grainMixer, CONFIG.grainMixerMobile)
+      );
+      gl.uniform1f(
+        u_grainOverlay,
+        pick(CONFIG.grainOverlay, CONFIG.grainOverlayMobile)
+      );
+
+      buildText();
+    }
+    window.addEventListener("resize", resize);
+    resize();
+
+    function setMouse(x, y) {
+      mouse.u = x / window.innerWidth;
+      mouse.v = y / window.innerHeight;
+      active = 1;
+    }
+    window.addEventListener(
+      "pointermove",
+      e => setMouse(e.clientX, e.clientY),
+      { passive: true }
+    );
+    window.addEventListener(
+      "touchmove",
+      e => {
+        if (e.touches[0]) setMouse(e.touches[0].clientX, e.touches[0].clientY);
+      },
+      { passive: true }
+    );
+
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, noiseTex);
+
+    const start = performance.now();
+    function frame(now) {
+      const t = (now - start) / 1000;
+      gl.uniform1f(u_time, t);
+      gl.uniform2f(u_mouse, mouse.u, mouse.v);
+      gl.uniform1f(u_active, active);
+      gl.uniform1f(u_reduced, reduced ? 1.0 : 0.0);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      if (!reduced) requestAnimationFrame(frame);
+    }
+    if (reduced) active = 1;
+    requestAnimationFrame(frame);
+  })();
+</script>

@@ -1,0 +1,39 @@
+---
+import Stack from "@components/layout/Stack.astro";
+import Heading from "./Heading.astro";
+
+interface Props {
+  heading?: string;
+  subtitle?: string;
+}
+
+const { heading, subtitle } = Astro.props;
+
+if (!heading) {
+  console.warn("OverlapHeading: heading is required");
+  return null;
+}
+---
+
+<Stack space="0" align="center" text="center" class="OverlapHeading">
+  <Heading size="heading-xl" font="heading-alt" set:html={heading} />
+  {
+    subtitle && (
+      <Heading
+        class="subheading"
+        size="subheading-lg"
+        font="alt"
+        set:html={subtitle}
+      />
+    )
+  }
+</Stack>
+
+<style>
+  .OverlapHeading {
+    .subheading {
+      margin-block-start: -2.5ex;
+      line-height: 1;
+    }
+  }
+</style>

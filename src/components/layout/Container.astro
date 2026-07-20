@@ -1,0 +1,122 @@
+---
+import type { HTMLAttributes } from 'astro/types'
+
+interface Props extends HTMLAttributes<'div'> {
+  as?: string
+  /**
+   * The max-width of the container.
+   * - default: ~110rem (Site max)
+   * - narrow: ~45ch (Reading)
+   * - prose: ~65ch (Standard Text)
+   * - wide: ~80rem
+   * - full: 100%
+   */
+  size?: 'default' | 'narrow' | 'prose' | 'wide' | 'full'
+
+  /**
+   * Activates the 12-column Full Bleed Grid.
+   * - true: Defaults to 12 columns
+   * - 6: Sets 6 columns
+   * - 12: Sets 12 columns
+   */
+  bleed?: boolean | 6 | 12
+}
+
+const { as: Tag = 'div', size = 'default', bleed = false, class: className, ...rest } = Astro.props
+
+/* * CLEAN HTML STRATEGY
+ * Filter default values.
+ * Bleed logic:
+ * - false -> undefined
+ * - true -> "12" (Default columns)
+ * - number -> string (e.g. "6")
+ */
+const attributes = {
+  'data-size': size === 'default' ? undefined : size,
+  'data-bleed': bleed === false ? undefined : bleed === true ? '12' : String(bleed),
+}
+---
+
+<Tag class:list={['container', className]} {...attributes} {...rest}>
+  <slot />
+</Tag>
+
+<style>
+  :root {
+    --container-max-width: 110rem;
+    --container-padding: var(--space-md-2xl);
+  }
+
+  @layer base {
+    .container {
+      --_container-max-width: var(--container-max-width, 110rem);
+      --_container-padding: var(--container-padding, var(--space-md-2xl));
+
+      width: 100%;
+      max-width: var(--_container-max-width);
+      margin-inline: auto;
+      padding-inline: var(--_container-padding);
+    }
+
+    [data-size='narrow'] {
+      --_container-max-width: 45ch;
+    }
+    [data-size='prose'] {
+      --_container-max-width: 70ch;
+    }
+    [data-size='wide'] {
+      --_container-max-width: 80rem;
+    }
+    [data-size='full'] {
+      --_container-max-width: 100%;
+    }
+
+    /* 3. FULL BLEED GRID LOGIC */
+    [data-bleed] {
+      --_cols: 12;
+
+      display: grid;
+      padding-inline: 0;
+      max-width: 100%;
+
+      --_col-size: calc(
+        min(100% - (var(--_container-padding) * 2), var(--_container-max-width)) / var(--_cols)
+      );
+
+      grid-template-columns:
+        [full-start] minmax(var(--_container-padding), 1fr)
+        [content-start] repeat(var(--_cols), var(--_col-size)) [content-end]
+        minmax(var(--_container-padding), 1fr) [full-end];
+    }
+
+    [data-bleed='6'] {
+      --_cols: 6;
+    }
+    [data-bleed='12'] {
+      --_cols: 12;
+    }
+
+    /* 4. DEFAULT CHILD PLACEMENT
+       By default, items sit in the "Content" area.
+       Grid Column 2 starts after the Left Gutter.
+       Span across the number of columns defined.
+    */
+    [data-bleed] {
+      > :global(*) {
+        grid-column: content;
+      }
+      /* 5. UTILITY PLACEMENTS (Optional Helpers) */
+
+      /* Full Bleed (Edge to Edge) */
+      > :global(.full-bleed),
+      > :global([data-full-bleed]) {
+        grid-column: full;
+      }
+
+      /* Popout (Slightly wider than content? Optional) */
+      > :global(.popout) {
+        grid-column: 2 / -2; /* Spans everything except the outer gutters */
+      }
+    }
+  }
+</style>

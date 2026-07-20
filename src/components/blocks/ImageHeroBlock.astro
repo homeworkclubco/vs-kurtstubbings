@@ -1,0 +1,104 @@
+---
+import Heading from "@components/display/Heading.astro";
+import Container from "@components/layout/Container.astro";
+import Section from "@components/layout/Section.astro";
+import Stack from "@components/layout/Stack.astro";
+import { Image } from "astro:assets";
+import type { InferEntrySchema } from "astro:content";
+
+type Section_ = NonNullable<InferEntrySchema<"pages">["sections"]>[number];
+
+interface Props {
+  block: Extract<Section_, { type: "imageHeroBlock" }>;
+  index: number;
+}
+
+const { block } = Astro.props;
+const {
+  id,
+  heading,
+  subtitle,
+  image,
+  imageAlt = "",
+  minHeight = "28rem",
+  colorScheme = "dark",
+} = block;
+---
+
+<Section
+  id={id}
+  class="ImageHeroBlock"
+  colorScheme={colorScheme}
+  style={`--min-height: ${minHeight}`}
+  x-data="{
+    offset: 0,
+    update() {
+      var r = this.$el.getBoundingClientRect();
+      this.offset = (r.top + r.height / 2 - window.innerHeight / 2) * 0.1;
+    }
+  }"
+  x-init="update()"
+  x-on:scroll.window.passive="update()"
+>
+  <div
+    class="bg"
+    aria-hidden="true"
+    :style="`transform: translateY(${offset}px)`"
+  >
+    <Image
+      src={image as string}
+      alt={imageAlt}
+      width={2000}
+      inferSize
+      class="bg-img"
+    />
+  </div>
+
+  <Container class="content">
+    <Stack space="md" align="center" text="center">
+      <Heading as="h1" size="5" class="heading" set:html={heading} />
+      {subtitle && <p class="subtitle" set:html={subtitle} />}
+    </Stack>
+  </Container>
+</Section>
+
+<style>
+  .ImageHeroBlock {
+    position: relative;
+    min-height: var(--min-height, 28rem);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+  }
+
+  .bg {
+    position: absolute;
+    inset: -20% 0;
+    will-change: transform;
+
+    &::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      background: linear-gradient(
+        to top,
+        color-mix(in srgb, var(--color-neutral-950) 80%, transparent),
+        color-mix(in srgb, var(--color-neutral-950) 30%, transparent)
+      );
+    }
+  }
+
+  .bg-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+  }
+  .content {
+    position: relative;
+    z-index: 2;
+    padding-block: var(--space-xl);
+  }
+</style>

@@ -1,0 +1,59 @@
+---
+import type { HTMLAttributes } from 'astro/types'
+import type { SpaceToken } from '../../types'
+
+interface Props extends HTMLAttributes<'div'> {
+  as?: string
+  space?: SpaceToken // Default: 'sm'
+  spaceX?: SpaceToken // Default: 'sm'
+  spaceY?: SpaceToken // Default: 'sm'
+  justify?: 'start' | 'center' | 'end' | 'between' | 'around' // Default: 'start'
+  align?: 'start' | 'center' | 'end' | 'stretch' // Default: 'center'
+  noWrap?: boolean
+  class?: string
+}
+
+const {
+  as: Tag = 'div',
+  space,
+  spaceX,
+  spaceY,
+  justify = 'start',
+  align = 'center',
+  noWrap = false,
+  class: className,
+  ...rest
+} = Astro.props
+
+// Use space only when spaceX and spaceY are not provided, otherwise default to 'sm'
+const dataSpace = !spaceX && !spaceY ? space || 'sm' : undefined
+
+const attributes = {
+  'data-gap': dataSpace,
+  'data-gap-x': spaceX,
+  'data-gap-y': spaceY,
+  'data-justify': justify,
+  'data-align': align,
+  'data-nowrap': noWrap ? '' : undefined,
+}
+---
+
+<Tag class:list={['cluster', className]} {...attributes} {...rest}>
+  <slot />
+</Tag>
+
+<style>
+  @layer base {
+    .cluster {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+      align-items: center;
+    }
+
+    /* 5. Wrap Control */
+    [data-nowrap] {
+      flex-wrap: nowrap;
+    }
+  }
+</style>

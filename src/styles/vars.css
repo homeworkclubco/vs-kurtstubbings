@@ -1,0 +1,84 @@
+/* @link https://utopia.fyi/type/calculator?c=320,18,1.2,1660,18,1.333,5,2,&s=0.75|0.5|0.25,1.5|2|3|4|6,s-l&g=s,l,xl,12 */
+
+:root {
+  @utopia typeScale({
+        minFontSize: 16,
+        maxFontSize: 18,
+        minTypeScale: 1.2,
+        maxTypeScale: 1.333,
+        positiveSteps: 5,
+        negativeSteps: 2,
+        prefix: "text",
+      });
+
+  /* @link https://utopia.fyi/space/calculator?c=320,16,1.2,1660,18,1.333,5,2,&s=0.75|0.5|0.25,1.5|2|3|4|6|10|14,&g=s,l,xl,12 */
+
+  @utopia spaceScale({
+        minSize: 16,
+        maxSize: 18,
+        positiveSteps: [1.5, 2, 3, 4, 6, 10, 14],
+        negativeSteps: [0.75, 0.5, 0.25],
+        customSizes: [
+          "3xs-2xs", "3xs-xs", "3xs-s", "3xs-m", "3xs-l", "3xs-xl", "3xs-2xl", "3xs-3xl", "3xs-4xl", "3xs-5xl",
+          "2xs-xs", "2xs-s", "2xs-m", "2xs-l", "2xs-xl", "2xs-2xl", "2xs-3xl", "2xs-4xl", "2xs-5xl",
+          "xs-s", "xs-m", "xs-l", "xs-xl", "xs-2xl", "xs-3xl", "xs-4xl", "xs-5xl",
+          "s-m", "s-l", "s-xl", "s-2xl", "s-3xl", "s-4xl", "s-5xl",
+          "m-l", "m-xl", "m-2xl", "m-3xl", "m-4xl", "m-5xl",
+          "l-xl", "l-2xl", "l-3xl", "l-4xl", "l-5xl",
+          "xl-2xl", "xl-3xl", "xl-4xl", "xl-5xl",
+          "2xl-3xl", "2xl-4xl", "2xl-5xl",
+          "3xl-4xl", "3xl-5xl",
+          "4xl-5xl"
+        ],
+        prefix: "spacing",
+      });
+
+  /* @utopia clamps({
+          pairs: [
+            [16, 40],
+          ],   
+          prefix: 'test',      
+        }); */
+}
+
+/* :root {
+  @flutopolis generateScale({
+          generateAllCrossPairs: true,
+          pairs: [
+              ["-2", 11, 12],
+              ["-1", 14, 16],
+              ["0", 16, 20],
+              ["1", 18, 24],
+              ["2", 20, 32],
+              ["3", 24, 36],
+              ["4", 28, 48],
+              ["5", 32, 64],
+              ["6", 48, 96],
+              ["7", 64, 128],
+              ["8", 96, 192],
+          ],
+          usePx: false,
+          prefix: 'font-size',
+      });
+
+  @flutopolis generateScale({
+        pairs: [
+            ["4xs", 2, 4],
+            ["3xs", 4, 6],
+            ["2xs", 6, 8],
+            ["xs", 8, 12],
+            ["s", 12, 16],
+            ["m", 16, 24],
+            ["l", 24, 32],
+            ["xl", 32, 48],
+            ["2xl", 48, 64],
+            ["3xl", 64, 96],
+            ["4xl", 96, 128],
+            ["5xl", 128, 192],
+            ["6xl", 192, 256],
+        ],
+        usePx: false,
+        prefix: 'space',
+        generateAllCrossPairs: true,
+      });
+} */

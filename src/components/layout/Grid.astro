@@ -1,0 +1,70 @@
+---
+import type { HTMLAttributes } from 'astro/types'
+import type { SpaceToken } from '../types'
+
+interface Props extends HTMLAttributes<'div'> {
+  as?: string
+  space?: SpaceToken // Default: 'lg'
+  spaceX?: SpaceToken // Default: 'lg'
+  spaceY?: SpaceToken // Default: 'lg'
+  /**
+   * Minimum width of a column before it wraps.
+   * - Presets: 'xs' (200px), 'sm' (250px), 'md' (300px), 'lg' (400px)
+   * - Custom: Any CSS length ('35ch', '150px', '20rem')
+   */
+  minItemWidth?: 'xs' | 'sm' | 'md' | 'lg' | (string & {})
+  noStretch?: boolean
+}
+
+const {
+  as: Tag = 'div',
+  space,
+  spaceX,
+  spaceY,
+  minItemWidth = 'sm',
+  noStretch = false,
+  class: className,
+  style,
+  ...rest
+} = Astro.props
+
+// Use space only when spaceX and spaceY are not provided, otherwise default to 'lg'
+const dataSpace = !spaceX && !spaceY ? space || 'lg' : undefined
+
+// 1. Logic: Map presets to values (JS side is cleaner for mixed types)
+const presets: Record<string, string> = {
+  xs: '15rem', // ~240px
+  sm: '20rem', // ~320px
+  md: '25rem', // ~400px
+  lg: '30rem', // ~480px
+}
+
+const widthValue = presets[minItemWidth] || minItemWidth
+
+// 2. Clean HTML: Filter defaults
+const attributes = {
+  'data-gap': dataSpace,
+  'data-gap-x': spaceX,
+  'data-gap-y': spaceY,
+  'data-no-stretch': noStretch ? '' : undefined,
+}
+
+// 3. Dynamic Variables (Only for arbitrary values)
+const vars = {
+  '--grid-min': widthValue,
+}
+---
+
+<Tag class:list={['grid', className]} style={[vars, style]} {...attributes} {...rest}>
+  <slot />
+</Tag>
+
+<style>
+  @layer base {
+    .grid {
+      display: grid;
+      gap: var(--space-lg);
+      grid-template-columns: repeat(auto-fit, minmax(min(var(--grid-min), 100%), 1fr));
+    }
+  }
+</style>

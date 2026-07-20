@@ -1,0 +1,53 @@
+/* These are all the tokens that are safe to come through to the front end */
+@import './spacing.css';
+@import './typography.css';
+@import './easing.css';
+@import './color.css';
+
+@layer tokens {
+  :root {
+    /* ------------------------------
+    1. PRIMITIVES
+    ------------------------------ */
+
+    /* Radius sizes */
+    --radius-xs: 0.125em;
+    --radius-sm: 0.25em;
+    --radius-md: 0.5em;
+    --radius-lg: 1em;
+    --radius-xl: 1.5em;
+    --radius-full: 9999px;
+
+    /* Default radius */
+    --radius: var(--radius-sm);
+
+    /* ------------------------------
+    1. PRIMITIVES 
+    ------------------------------ */
+
+    /* For buttons, forms, etc */
+    /* We'd commonly use fluid tokens for these, or ruler.fluid() if its not in the spacing scale */
+    --control-height-sm: 3em;
+    --control-height-md: 3.5em;
+    --control-height-lg: 4.5em;
+
+    --control-radius: var(--radius-sm);
+
+    --control-font-size-sm: var(--font-size--1);
+    --control-font-size-md: var(--font-size--1);
+    --control-font-size-lg: var(--font-size-0);
+
+    --control-padding-inline-sm: var(--space-sm);
+    --control-padding-inline-md: var(--space-md);
+    --control-padding-inline-lg: var(--space-xl);
+
+    --control-padding-block-sm: var(--space-2xs);
+    --control-padding-block-md: var(--space-2xs);
+    --control-padding-block-lg: var(--space-2xs);
+
+    --control-gap-sm: var(--space-xs);
+    --control-gap-md: var(--space-sm);
+    --control-gap-lg: var(--space-md);
+    --control-gap: var(--control-gap-md);
+  }
+}

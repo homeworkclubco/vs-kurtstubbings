@@ -1,0 +1,247 @@
+---
+import type { HTMLAttributes } from "astro/types";
+
+interface Props
+  extends
+    HTMLAttributes<"a">,
+    HTMLAttributes<"button">,
+    HTMLAttributes<"span"> {
+  variant?: "primary" | "secondary" | "ghost" | "text";
+  size?: "sm" | "md" | "lg";
+  iconOnly?: boolean;
+  fullWidth?: boolean | "mobile-only";
+  as?: "a" | "button" | "span";
+  label?: string;
+  type?: "button" | "submit" | "reset";
+  class?: string;
+}
+
+const {
+  variant = "primary",
+  size = "md",
+  iconOnly = false,
+  fullWidth = false,
+  as,
+  href,
+  label,
+  ["aria-label"]: ariaLabelProp,
+  class: className = "",
+  type: typeProp,
+  ...rest
+} = Astro.props;
+
+const Tag = as || (href ? "a" : "button");
+const isButton = Tag === "button";
+
+const classes = ["btn", `size-${size}`, variant, className];
+
+if (iconOnly) classes.push("icon-only");
+if (fullWidth === true) classes.push("block-all");
+if (fullWidth === "mobile-only") classes.push("block-mobile");
+
+const ariaLabel = ariaLabelProp ?? (iconOnly ? label : undefined);
+const buttonType = (isButton ? typeProp : undefined) as
+  | "button"
+  | "submit"
+  | "reset"
+  | undefined;
+const restProps = isButton ? { type: buttonType ?? "button", ...rest } : rest;
+---
+
+<Tag href={href} class:list={classes} aria-label={ariaLabel} {...restProps}>
+  <span class="btn-content">
+    <slot />
+    {iconOnly && label && <span class="sr-only">{label}</span>}
+  </span>
+</Tag>
+
+<style>
+  @layer base {
+    .btn {
+      --button-bg: transparent;
+      --button-label: inherit;
+      --button-hover-bg: transparent;
+      --button-hover-label: inherit;
+      --button-radius: var(--control-radius);
+      --button-padding-inline: var(--control-padding-inline-md);
+      --button-padding-block: var(--control-padding-block-md);
+      --button-font-size: var(--control-font-size-md);
+      --button-height: var(--control-height-md);
+      --button-gap: var(--control-gap);
+
+      display: inline-flex;
+      flex-shrink: 0;
+      align-items: center;
+      justify-content: center;
+      vertical-align: middle;
+      touch-action: manipulation;
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+      height: var(--button-height);
+      border-radius: var(--button-radius);
+      border: none;
+      padding: 0;
+      font-size: var(--button-font-size);
+      text-decoration: none;
+      line-height: 1;
+      white-space: nowrap;
+      cursor: pointer;
+      width: max-content;
+      background: var(--button-bg);
+      color: var(--button-label);
+      text-transform: uppercase;
+      font-family: var(--font-family-heading);
+      font-weight: var(--font-weight-black);
+      font-stretch: 125%;
+      font-width: 125%;
+      transition: color 0.35s var(--ease-out-quad);
+
+      /* Sweep fill */
+      &::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: var(--button-hover-bg);
+        transform: translateY(105%);
+        transition: transform 0.35s var(--ease-out-quad);
+        z-index: 0;
+      }
+
+      &:hover {
+        color: var(--button-hover-label);
+
+        &::before {
+          transform: translateY(0);
+        }
+
+        .btn-content {
+          /* letter-spacing: 0.08em; */
+          /* transform: translateY(-2px); */
+        }
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 2px;
+      }
+
+      &:active {
+        transform: translateY(1px);
+      }
+
+      &:disabled,
+      &[aria-disabled="true"] {
+        opacity: 0.5;
+        pointer-events: none;
+        cursor: not-allowed;
+      }
+    }
+
+    .btn-content {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--button-gap);
+      padding: var(--button-padding-block) var(--button-padding-inline);
+      position: relative;
+      z-index: 1;
+      transition: transform 0.35s var(--ease-out-quad);
+    }
+
+    /* PRIMARY: white bg, dark text */
+    .btn.primary {
+      --button-bg: var(--color-white);
+      --button-label: var(--color-neutral-950);
+      --button-hover-bg: var(--color-neutral-950);
+      --button-hover-label: var(--color-white);
+    }
+
+    /* SECONDARY: dark grey bg, white text */
+    .btn.secondary {
+      --button-bg: var(--color-neutral-800);
+      --button-label: var(--color-white);
+      --button-hover-bg: var(--color-white);
+      --button-hover-label: var(--color-neutral-950);
+    }
+
+    /* GHOST: transparent, subtle fill on hover */
+    .btn.ghost {
+      --button-bg: transparent;
+      --button-label: currentColor;
+      --button-hover-bg: color-mix(in oklch, currentColor 8%, transparent);
+      --button-hover-label: currentColor;
+      margin-inline: calc(-1 * var(--button-padding-inline));
+    }
+
+    /* TEXT: no background, underline on hover */
+    .btn.text {
+      --button-bg: transparent;
+      --button-label: currentColor;
+      --button-hover-label: currentColor;
+      --button-padding-inline: 0;
+      --button-padding-block: 0;
+      height: auto;
+      overflow: visible;
+
+      &::before {
+        display: none;
+      }
+
+      &:hover .btn-content {
+        text-decoration: underline;
+        letter-spacing: inherit;
+        transform: none;
+      }
+    }
+
+    /* SIZES */
+    .size-sm {
+      --button-font-size: var(--control-font-size-sm);
+      --button-padding-inline: var(--control-padding-inline-sm);
+      --button-padding-block: var(--control-padding-block-sm);
+      --button-height: var(--control-height-sm);
+    }
+
+    .size-md {
+      --button-font-size: var(--control-font-size-md);
+      --button-padding-inline: var(--control-padding-inline-md);
+      --button-padding-block: var(--control-padding-block-md);
+      --button-height: var(--control-height-md);
+    }
+
+    .size-lg {
+      --button-font-size: var(--control-font-size-lg);
+      --button-padding-inline: var(--control-padding-inline-lg);
+      --button-padding-block: var(--control-padding-block-lg);
+      --button-height: var(--control-height-lg);
+    }
+
+    /* ICON ONLY */
+    .btn.icon-only {
+      aspect-ratio: 1 / 1;
+
+      .btn-content {
+        padding: var(--button-padding-block);
+        inline-size: 100%;
+      }
+    }
+
+    /* FULL WIDTH */
+    .btn.block-all {
+      display: flex;
+      width: 100%;
+
+      > * {
+        width: 100%;
+      }
+    }
+
+    .btn.block-mobile {
+      @media (--sm-down) {
+        display: flex;
+        width: 100%;
+      }
+    }
+  }
+</style>

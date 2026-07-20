@@ -1,0 +1,149 @@
+---
+import Button from "@components/actions/Button.astro";
+import OverlapHeading from "@components/display/OverlapHeading.astro";
+import InsetField from "@components/forms/InsetField.astro";
+import Cluster from "@components/layout/Cluster.astro";
+import Container from "@components/layout/Container.astro";
+import Section from "@components/layout/Section.astro";
+import Stack from "@components/layout/Stack.astro";
+import type { InferEntrySchema } from "astro:content";
+
+type Section_ = NonNullable<InferEntrySchema<"pages">["sections"]>[number];
+
+interface Props {
+  block: Extract<Section_, { type: "contactBlock" }>;
+  index: number;
+}
+
+const { block } = Astro.props;
+const { id, heading, subtitle } = block;
+---
+
+<Section id={id} class="ContactBlock" colorScheme="dark" padding="xl">
+  <Stack space="2xl">
+    <OverlapHeading heading={heading} subtitle={subtitle} />
+
+    <Container size="narrow">
+      <form
+        class="contact-form"
+        method="POST"
+        action=""
+        x-data="{
+          submitting: false,
+          success: false,
+          errorMsg: '',
+          async submit(event) {
+            this.submitting = true;
+            this.errorMsg = '';
+            const form = event.target;
+            try {
+              // TODO: replace with your form endpoint
+              const res = await fetch(form.action, {
+                method: 'POST',
+                headers: { 'Accept': 'application/json' },
+                body: new URLSearchParams(new FormData(form)),
+              });
+              const data = await res.json();
+              if (data.ok) {
+                this.success = true;
+                form.reset();
+              } else {
+                this.errorMsg = data.error ?? 'Something went wrong. Please try again.';
+              }
+            } catch {
+              this.errorMsg = 'Network error. Please check your connection and try again.';
+            } finally {
+              this.submitting = false;
+            }
+          }
+        }"
+        @submit.prevent="submit($event)"
+      >
+        <Stack space="md">
+          <!-- Success message -->
+          <div x-show="success" x-transition role="alert">
+            Thanks! We'll be in touch soon.
+          </div>
+
+          <!-- Error message -->
+          <div
+            x-show="errorMsg"
+            x-text="errorMsg"
+            x-transition
+            role="alert"
+            style="color:red"
+          >
+          </div>
+
+          <div x-show="!success">
+            <div class="form-grid">
+              <Stack space="md" class="form-fields">
+                <InsetField
+                  label="Name"
+                  inputId="name"
+                  name="name"
+                  required
+                  autocomplete="name"
+                />
+                <InsetField
+                  label="Phone Number"
+                  inputId="phone"
+                  name="phone"
+                  type="tel"
+                  autocomplete="tel"
+                />
+                <InsetField
+                  label="Email"
+                  inputId="email"
+                  name="email"
+                  type="email"
+                  required
+                  autocomplete="email"
+                />
+              </Stack>
+              <InsetField
+                label="Message"
+                inputId="message"
+                name="message"
+                multiline
+                rows={6}
+                required
+                class="form-message"
+                resize="none"
+              />
+              <input
+                name="_gotcha"
+                type="text"
+                tabindex="-1"
+                autocomplete="off"
+                aria-hidden="true"
+                style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden"
+              />
+              <!-- TODO: add your Cloudflare Turnstile site key here if needed -->
+            </div>
+            <Cluster justify="center">
+              <Button
+                variant="primary"
+                type="submit"
+                class="submit-btn w-full"
+                :disabled="submitting"
+                ><span x-text="submitting ? 'Sending…' : 'Send'">Send</span
+                ></Button
+              >
+            </Cluster>
+          </div>
+        </Stack>
+      </form>
+    </Container>
+  </Stack>
+</Section>
+
+<style>
+  @layer base {
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-md);
+    }
+  }
+</style>

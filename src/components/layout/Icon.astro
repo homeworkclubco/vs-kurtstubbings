@@ -1,0 +1,65 @@
+---
+import type { HTMLAttributes } from "astro/types";
+
+interface Props extends HTMLAttributes<"span"> {
+  label?: string;
+  size?: "sm" | "md" | "lg" | "xl" | string;
+}
+
+const {
+  label,
+  size = "md", // Default to 1em (text size)
+  class: className = "",
+  style,
+  ...rest
+} = Astro.props;
+
+const isDecorative = !label;
+
+// Map presets
+const sizes: Record<string, string> = {
+  sm: "0.75em",
+  md: "1em",
+  lg: "1.25em",
+  xl: "1.5em",
+  inline: "1.2ex",
+};
+
+const vars = {
+  "--icon-size": sizes[size] || size,
+};
+---
+
+<span
+  class:list={["icon", className]}
+  style={[vars, style]}
+  aria-hidden={isDecorative ? "true" : undefined}
+  aria-label={label}
+  role={isDecorative ? "img" : undefined}
+  {...rest}
+>
+  <slot />
+</span>
+
+<style>
+  .icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: var(--icon-size);
+    width: var(--icon-size);
+    vertical-align: middle;
+    position: relative;
+    /* Optional: Fine-tune baseline if it feels "high" */
+    top: -0.05em;
+    color: currentColor;
+    flex-shrink: 0;
+
+    :global(svg) {
+      height: 100%;
+      width: 100%;
+      stroke: currentColor;
+      fill: none;
+    }
+  }
+</style>

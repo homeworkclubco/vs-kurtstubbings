@@ -1,0 +1,22 @@
+{
+	"main": "@astrojs/cloudflare/entrypoints/server",
+	"name": "starter-site",
+  "compatibility_date": "2026-04-13",
+  "compatibility_flags": [
+    "nodejs_compat",
+    "global_fetch_strictly_public"
+  ],
+	"assets": {
+		"binding": "ASSETS",
+		"directory": "./dist/client"
+	},
+	"routes": [
+    {
+      "pattern": "example.com",
+      "custom_domain": true
+    }
+  ],
+	"observability": {
+    "enabled": true
+  }
+}

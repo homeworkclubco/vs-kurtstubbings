@@ -1,0 +1,21 @@
+@layer tokens, base, props, utilities;
+
+@import './reset.css';
+@import './tokens';
+@import './props';
+@import './utilities';
+
+.link {
+  color: var(--color-foreground);
+  text-decoration: underline;
+  text-decoration-color: var(--color-accent);
+  text-decoration-thickness: 0.125em;
+  text-underline-offset: 0.25em; 
+  transition: all 0.2s var(--ease);
+  
+  &:hover,
+  &:focus-visible  {
+    text-underline-offset: 0.35em; 
+
+  }
+}

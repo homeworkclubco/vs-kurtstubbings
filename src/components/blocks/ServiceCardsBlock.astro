@@ -1,0 +1,170 @@
+---
+import Button from "@components/actions/Button.astro";
+import Heading from "@components/display/Heading.astro";
+import OverlapHeading from "@components/display/OverlapHeading.astro";
+import Prose from "@components/display/Prose.astro";
+import Container from "@components/layout/Container.astro";
+import Grid from "@components/layout/Grid.astro";
+import Section from "@components/layout/Section.astro";
+import Stack from "@components/layout/Stack.astro";
+import type { ImageMetadata } from "astro";
+import { Image } from "astro:assets";
+import { getCollection } from "astro:content";
+import type { InferEntrySchema } from "astro:content";
+
+type Section_ = NonNullable<InferEntrySchema<"pages">["sections"]>[number];
+
+interface Props {
+  block: Extract<Section_, { type: "serviceCardsBlock" }>;
+  index: number;
+}
+
+const { block } = Astro.props;
+const { id, heading = "Services", subtitle = "What We Offer" } = block;
+
+const allServices = await getCollection("services");
+const services = allServices.sort(
+  (a, b) => (a.data.order ?? 99) - (b.data.order ?? 99)
+);
+
+// Import all 4 noise bg images
+const bgImages = import.meta.glob<{ default: ImageMetadata }>(
+  "@assets/images/noise-bg-*.jpg",
+  { eager: true }
+);
+const bgs = Object.values(bgImages).map(m => m.default);
+---
+
+<Section id={id} class="ServiceCardsBlock" colorScheme="dark" padding="xl">
+  <Container>
+    <Stack space="2xl" align="center" text="center">
+      <OverlapHeading heading={heading} subtitle={subtitle} />
+      <Grid
+        as="ul"
+        minItemWidth="var(--ServiceCardsBlock-min-item-width)"
+        space="xl"
+        class="cards-grid"
+      >
+        {
+          services.map((service, i) => {
+            const bg = bgs[i % bgs.length];
+            return (
+              <li class="card">
+                <div class="card-bg-wrap">
+                  <Image
+                    src={bg}
+                    alt=""
+                    aria-hidden="true"
+                    class="card-bg"
+                    loading="lazy"
+                    widths={[400, 600]}
+                    sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                  />
+                </div>
+                <Stack
+                  as="a"
+                  href={`/services/${service.data.slug ?? service.id}`}
+                  space="lg"
+                  justify="center"
+                  align="center"
+                  text="center"
+                  class="card-inner h-full"
+                  splitAfter={3}
+                >
+                  <div class="card-icon" aria-hidden="true">
+                    <Image
+                      src={service.data.icon as ImageMetadata}
+                      alt=""
+                      width={80}
+                      height={80}
+                    />
+                  </div>
+                  <Heading
+                    as="h3"
+                    size="2"
+                    class="card-title"
+                    set:html={service.data.title}
+                  />
+                  <Prose class="card-desc grow">
+                    <p>{service.data.description}</p>
+                  </Prose>
+                  <Button
+                    as="span"
+                    variant="primary"
+                    class="card-cta"
+                    set:html={service.data.cta}
+                  />
+                </Stack>
+              </li>
+            );
+          })
+        }
+      </Grid>
+    </Stack>
+  </Container>
+</Section>
+
+<style>
+  .ServiceCardsBlock {
+    --ServiceCardsBlock-min-item-width: ruler.fluid(260, 400);
+
+    .cards-grid {
+      width: 100%;
+
+      &:hover {
+        .card {
+          opacity: 0.5;
+
+          &:hover {
+            opacity: 1;
+          }
+        }
+      }
+    }
+
+    .card {
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s var(--ease-out-cubic);
+
+      &:hover {
+        .card-bg {
+          transform: scale(1.1);
+        }
+      }
+    }
+
+    .card-bg-wrap {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+
+      img.card-bg {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: 1.5s all var(--easing);
+      }
+    }
+
+    .card-inner {
+      position: relative;
+      z-index: 2;
+      padding-inline: var(--space-md-lg);
+      padding-block: var(--space-xl);
+    }
+
+    .card-icon {
+      width: ruler.fluid(64, 120);
+      height: ruler.fluid(64, 120);
+      margin-inline: auto;
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+    }
+  }
+</style>

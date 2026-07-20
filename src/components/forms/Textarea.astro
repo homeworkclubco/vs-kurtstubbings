@@ -1,0 +1,75 @@
+---
+import type { HTMLAttributes } from 'astro/types'
+
+interface Props extends HTMLAttributes<'textarea'> {
+  size?: 'sm' | 'md' | 'lg'
+  resize?: 'none' | 'vertical' | 'horizontal' | 'both'
+}
+
+const {
+  size = 'md',
+  resize = 'vertical',
+  class: className,
+  style,
+  ...rest
+} = Astro.props
+
+const vars = { '--_textarea-resize': resize }
+---
+
+<textarea
+  class:list={['textarea', className]}
+  data-size={size}
+  style={[vars, style]}
+  {...rest}
+></textarea>
+
+<style>
+  @layer base {
+    .textarea {
+      display: block;
+      width: 100%;
+      min-height: calc(var(--control-height-md) * 2.5);
+      padding: var(--control-padding-block-md) var(--control-padding-inline-md);
+      font-size: var(--control-font-size-md);
+      font-family: inherit;
+      line-height: var(--line-height);
+      color: var(--input-text);
+      background-color: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: var(--control-radius);
+      outline: none;
+      resize: var(--_textarea-resize, vertical);
+      transition: border-color 0.2s ease;
+
+      &::placeholder {
+        color: var(--input-placeholder);
+      }
+
+      &:focus-visible {
+        border-color: var(--input-border-focus);
+      }
+
+      &[aria-invalid='true'] {
+        border-color: var(--input-border-error);
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+
+    .textarea[data-size='sm'] {
+      min-height: calc(var(--control-height-sm) * 2.5);
+      padding: var(--control-padding-block-sm) var(--control-padding-inline-sm);
+      font-size: var(--control-font-size-sm);
+    }
+
+    .textarea[data-size='lg'] {
+      min-height: calc(var(--control-height-lg) * 2.5);
+      padding: var(--control-padding-block-lg) var(--control-padding-inline-lg);
+      font-size: var(--control-font-size-lg);
+    }
+  }
+</style>

@@ -1,0 +1,60 @@
+---
+import type { HTMLAttributes } from 'astro/types'
+
+interface Props extends HTMLAttributes<'input'> {
+  size?: 'sm' | 'md' | 'lg'
+}
+
+const { size = 'md', type = 'text', class: className, ...rest } = Astro.props
+---
+
+<input type={type} class:list={['input', className]} data-size={size} {...rest} />
+
+<style>
+  @layer base {
+    .input {
+      display: block;
+      width: 100%;
+      height: var(--control-height-md);
+      padding-inline: var(--control-padding-inline-md);
+      font-size: var(--control-font-size-md);
+      font-family: inherit;
+      color: var(--input-text);
+      background-color: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: var(--control-radius);
+      outline: none;
+      transition: border-color 0.2s ease;
+
+      &::placeholder {
+        color: var(--input-placeholder);
+      }
+
+      &:focus-visible {
+        border-color: var(--input-border-focus);
+        box-shadow: unset;
+      }
+
+      &[aria-invalid='true'] {
+        border-color: var(--input-border-error);
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+
+    .input[data-size='sm'] {
+      height: var(--control-height-sm);
+      padding-inline: var(--control-padding-inline-sm);
+      font-size: var(--control-font-size-sm);
+    }
+
+    .input[data-size='lg'] {
+      height: var(--control-height-lg);
+      padding-inline: var(--control-padding-inline-lg);
+      font-size: var(--control-font-size-lg);
+    }
+  }
+</style>

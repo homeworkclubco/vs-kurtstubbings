@@ -1,0 +1,94 @@
+---
+import type { HTMLAttributes } from 'astro/types'
+
+interface Props extends HTMLAttributes<'div'> {
+  label?: string
+  inputId?: string
+  required?: boolean
+  error?: string
+  hint?: string
+}
+
+const {
+  label,
+  inputId,
+  required = false,
+  error,
+  hint,
+  class: className,
+  ...rest
+} = Astro.props
+---
+
+<div
+  class:list={['field', className]}
+  data-error={error ? '' : undefined}
+  data-required={required ? '' : undefined}
+  {...rest}
+>
+  {(label || error) && (
+    <div class="field-header">
+      {label && (
+        <label class="field-label" for={inputId}>
+          {label}
+          {required && <span class="field-required" aria-hidden="true">*</span>}
+        </label>
+      )}
+      {error && (
+        <span
+          class="field-error-msg"
+          id={inputId ? `${inputId}-error` : undefined}
+        >{error}</span>
+      )}
+    </div>
+  )}
+  <slot />
+  {hint && <p class="field-hint">{hint}</p>}
+</div>
+
+<style>
+  @layer base {
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2xs);
+    }
+
+    .field-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-sm);
+    }
+
+    .field-label {
+      font-size: var(--font-size--1);
+      color: var(--input-label);
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .field-required {
+      color: var(--input-error-text);
+      margin-inline-start: 0.1em;
+    }
+
+    .field-error-msg {
+      font-size: var(--font-size--1);
+      color: var(--input-error-text);
+      line-height: 1;
+    }
+
+    .field-hint {
+      font-size: var(--font-size--2);
+      color: var(--input-label);
+      margin: 0;
+    }
+
+    /* Error state: propagate orange border to child input/textarea */
+    .field[data-error] :global(.input),
+    .field[data-error] :global(.textarea) {
+      border-color: var(--input-border-error);
+    }
+  }
+</style>

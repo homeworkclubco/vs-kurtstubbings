@@ -1,0 +1,88 @@
+---
+import type { HTMLAttributes } from 'astro/types'
+import type { SpaceToken } from '../../types'
+
+interface Props extends HTMLAttributes<'div'> {
+  as?: string
+  side?: 'left' | 'right'
+  sideWidth?: string
+  contentMin?: string
+  space?: SpaceToken
+  noStretch?: boolean
+}
+
+const {
+  as: Tag = 'div',
+  side = 'left',
+  sideWidth = '20rem',
+  contentMin = '50%',
+  space = 'md',
+  noStretch = false,
+  class: className,
+  style,
+  ...rest
+} = Astro.props
+
+const attributes = {
+  'data-side': side,
+  'data-gap': space,
+  'data-no-stretch': noStretch ? '' : undefined,
+}
+
+const vars = {
+  '--sidebar-width': sideWidth,
+  '--content-min': contentMin,
+  '--gutter': `var(--space-${space})`,
+}
+---
+
+<Tag class:list={['sidebar', className]} style={[vars, style]} {...attributes} {...rest}>
+  <slot />
+</Tag>
+
+<style>
+  @layer base {
+    .sidebar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-md);
+    }
+
+    /* ---------------------------------------------------------
+       SIDEBAR LOGIC
+       We use the local --gutter var to calculate the breakpoint.
+       --------------------------------------------------------- */
+
+    /* DEFAULT (Left Sidebar) 
+       Applied when data-side is missing (default) or explicit "left".
+       We target children globally because they are slotted.
+    */
+    .sidebar {
+      > :global(:first-child) {
+        flex-basis: var(--sidebar-width);
+        flex-grow: 1;
+      }
+      > :global(:last-child) {
+        flex-basis: 0;
+        flex-grow: 999;
+        min-width: calc(var(--content-min) - var(--gutter));
+      }
+    }
+
+    /* RIGHT SIDEBAR OVERRIDE
+       Swaps the logic: Content is first, Sidebar is last.
+    */
+    .sidebar[data-side='right'] {
+      > :global(:first-child) {
+        flex-basis: 0;
+        flex-grow: 999;
+        min-width: calc(var(--content-min) - var(--gutter));
+      }
+      > :global(:last-child) {
+        flex-basis: var(--sidebar-width);
+        flex-grow: 1;
+        min-width: initial;
+      }
+    }
+  }
+</style>

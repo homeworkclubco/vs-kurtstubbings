@@ -1,0 +1,304 @@
+---
+import type { HTMLAttributes } from "astro/types";
+
+interface Props extends Omit<HTMLAttributes<"input">, "size"> {
+  label: string;
+  inputId?: string;
+  required?: boolean;
+  error?: string;
+  variant?: "static" | "floating";
+  size?: "sm" | "md" | "lg";
+  multiline?: boolean;
+  rows?: number;
+  resize?: "none" | "vertical" | "horizontal" | "both";
+  autocomplete?: string;
+}
+
+const {
+  label,
+  inputId,
+  required = false,
+  error,
+  variant = "static",
+  size = "md",
+  multiline = false,
+  rows = 4,
+  resize = "vertical",
+  class: className,
+  placeholder,
+  type = "text",
+  autocomplete,
+  ...rest
+} = Astro.props;
+
+// Floating single-line inputs use a space placeholder so CSS :placeholder-shown
+// can detect the empty state — the space is never visually rendered.
+const resolvedPlaceholder =
+  variant === "floating" && !multiline ? " " : placeholder;
+---
+
+<div
+  class:list={["inset-field", className]}
+  data-variant={variant}
+  data-size={size}
+  data-multiline={multiline ? "" : undefined}
+>
+  <div class="inset-box" data-error={error ? "" : undefined}>
+    <label class="inset-label" for={inputId}>
+      {label}
+      {
+        // required && (
+        //   <span class="inset-required" aria-hidden="true">
+        //     *
+        //   </span>
+        // )
+      }
+    </label>
+    {
+      multiline ? (
+        <textarea
+          id={inputId}
+          class="inset-input"
+          rows={rows}
+          placeholder={placeholder}
+          autocomplete={autocomplete}
+          required={required}
+          aria-required={required ? "true" : undefined}
+          aria-invalid={error ? "true" : undefined}
+          aria-describedby={error && inputId ? `${inputId}-error` : undefined}
+          style={`--_resize: ${resize}`}
+          {...(rest as any)}
+        />
+      ) : (
+        <input
+          id={inputId}
+          type={type}
+          class="inset-input"
+          placeholder={resolvedPlaceholder}
+          autocomplete={autocomplete}
+          required={required}
+          aria-required={required ? "true" : undefined}
+          aria-invalid={error ? "true" : undefined}
+          aria-describedby={error && inputId ? `${inputId}-error` : undefined}
+          {...rest}
+        />
+      )
+    }
+  </div>
+  {
+    error && (
+      <span class="inset-error" id={inputId ? `${inputId}-error` : undefined}>
+        {error}
+      </span>
+    )
+  }
+</div>
+
+<style>
+  @layer base {
+    /* ================================================
+       SIZING TOKENS (private, component-scoped)
+    ================================================ */
+    .inset-field {
+      --_padding-block: var(--space-sm);
+      --_padding-inline: var(--space-xs);
+      --_label-size: var(--font-size--2);
+      --_input-size: var(--control-font-size-md);
+
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2xs);
+    }
+
+    .inset-field[data-size="sm"] {
+      --_padding-block: var(--space-xs);
+      --_padding-inline: var(--space-xs);
+      --_label-size: var(--font-size--2);
+      --_input-size: var(--control-font-size-sm);
+    }
+
+    .inset-field[data-size="lg"] {
+      --_padding-block: var(--space-md);
+      --_padding-inline: var(--space-xs);
+      --_input-size: var(--control-font-size-lg);
+    }
+
+    /* ================================================
+       BORDERED BOX
+    ================================================ */
+    .inset-box {
+      position: relative;
+      background-color: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: var(--radius-sm);
+      height: 100%;
+      transition: border-color 0.2s ease;
+    }
+
+    .inset-box:focus-within {
+      border-color: var(--input-border-focus);
+    }
+
+    .inset-box[data-error] {
+      border-color: var(--input-border-error);
+    }
+
+    /* ================================================
+       LABEL
+    ================================================ */
+    .inset-label {
+      display: block;
+      font-size: var(--_label-size);
+      color: var(--input-label);
+      line-height: 1;
+      cursor: default;
+    }
+
+    .inset-required {
+      color: var(--input-error-text);
+      margin-inline-start: 0.1em;
+    }
+
+    /* ================================================
+       INPUT / TEXTAREA (shared)
+    ================================================ */
+    .inset-input {
+      display: block;
+      width: 100%;
+      border: none;
+      outline: none;
+      padding: 0;
+      background: transparent;
+      color: var(--input-text);
+      font-family: inherit;
+      font-size: var(--_input-size);
+
+      &::placeholder {
+        color: var(--input-placeholder);
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      &:focus-visible {
+        box-shadow: unset;
+      }
+    }
+
+    textarea.inset-input {
+      resize: var(--_resize, vertical);
+    }
+
+    /* ================================================
+       STATIC VARIANT
+       Label always visible at top, input below
+    ================================================ */
+    .inset-field[data-variant="static"] .inset-box {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+      padding: var(--_padding-block) var(--_padding-inline);
+    }
+
+    .inset-field[data-variant="static"][data-multiline] .inset-input {
+      min-height: calc(var(--control-height-md) * 2);
+    }
+
+    /* ================================================
+       FLOATING VARIANT — Single-line input
+       Label centered in box, floats to top on focus/fill
+    ================================================ */
+    .inset-field[data-variant="floating"]:not([data-multiline]) .inset-label {
+      position: absolute;
+      left: var(--_padding-inline);
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: var(--_input-size);
+      color: var(--input-placeholder);
+      pointer-events: none;
+      white-space: nowrap;
+      transition:
+        top 0.15s ease,
+        transform 0.15s ease,
+        font-size 0.15s ease,
+        color 0.15s ease;
+    }
+
+    /* Input is taller to accommodate the floated label */
+    .inset-field[data-variant="floating"]:not([data-multiline]) .inset-input {
+      height: var(--control-height-lg);
+      padding-inline: var(--_padding-inline);
+      /* Enough top padding so typed text clears the floated label */
+      padding-top: calc(
+        var(--_padding-block) + var(--_label-size) + var(--space-xs)
+      );
+      padding-bottom: var(--_padding-block);
+    }
+
+    /* Size overrides for floating input height */
+    .inset-field[data-variant="floating"][data-size="sm"]:not([data-multiline])
+      .inset-input {
+      height: calc(var(--control-height-md) + 0.5em);
+    }
+    .inset-field[data-variant="floating"][data-size="lg"]:not([data-multiline])
+      .inset-input {
+      height: calc(var(--control-height-lg) + 1em);
+    }
+
+    /* Float label when focused or when the input has a value */
+    .inset-field[data-variant="floating"]:not([data-multiline])
+      .inset-box:has(.inset-input:focus)
+      .inset-label,
+    .inset-field[data-variant="floating"]:not([data-multiline])
+      .inset-box:has(.inset-input:not(:placeholder-shown))
+      .inset-label {
+      top: var(--_padding-block);
+      transform: none;
+      font-size: var(--_label-size);
+      color: var(--input-label);
+    }
+
+    /* ================================================
+       FLOATING VARIANT — Textarea
+       Label pinned at top, changes color on focus
+       (can't vertically center a label in a tall textarea)
+    ================================================ */
+    .inset-field[data-variant="floating"][data-multiline] .inset-label {
+      position: absolute;
+      left: var(--_padding-inline);
+      top: var(--_padding-block);
+      font-size: var(--_label-size);
+      color: var(--input-placeholder);
+      pointer-events: none;
+      transition: color 0.15s ease;
+    }
+
+    .inset-field[data-variant="floating"][data-multiline] .inset-input {
+      padding-inline: var(--_padding-inline);
+      padding-top: calc(
+        var(--_padding-block) + var(--_label-size) + var(--space-xs)
+      );
+      padding-bottom: var(--_padding-block);
+      min-height: calc(var(--control-height-md) * 2.5);
+    }
+
+    /* Textarea floating: label shifts to active color on focus */
+    .inset-field[data-variant="floating"][data-multiline]
+      .inset-box:has(.inset-input:focus)
+      .inset-label {
+      color: var(--input-label);
+    }
+
+    /* ================================================
+       ERROR MESSAGE
+    ================================================ */
+    .inset-error {
+      display: block;
+      font-size: var(--font-size--2);
+      color: var(--input-error-text);
+      line-height: 1.2;
+    }
+  }
+</style>

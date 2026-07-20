@@ -1,0 +1,45 @@
+@layer utilities {
+  /* Alpine JS */
+  [x-cloak] {
+    display: none !important;
+  }
+
+  /* Accessibility utilities */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+
+    /* Focused on mouse (it never can be focused via mouse, because it's already invisible) */
+    &:focus {
+      opacity: 0;
+    }
+
+    /* Focused on keyboard */
+    &:focus-visible {
+      background-color: var(--color-white);
+      border-radius: 0;
+      box-shadow: 0 0 2px 2px rgb(22 22 22 / 0.6);
+      clip: auto;
+      clip-path: none;
+      display: block;
+      font-size: var(--font-size);
+      font-weight: var(--font-weight-bold);
+      height: auto;
+      left: 0.3125rem;
+      line-height: normal;
+      opacity: 1;
+      padding: 0.9375rem 1.4375rem 0.875rem;
+      text-decoration: none;
+      top: 0.3125rem;
+      width: auto;
+      z-index: 100000;
+    }
+  }
+}

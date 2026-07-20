@@ -1,0 +1,122 @@
+---
+import type { HTMLAttributes } from 'astro/types'
+import Stack from '@components/layout/Stack.astro'
+
+interface Props extends Omit<HTMLAttributes<'input'>, 'type'> {
+  label?: string
+  error?: string
+  size?: 'sm' | 'md' | 'lg'
+  labelSize?: 'sm' | 'md'
+}
+
+const { label, error, size = 'md', labelSize = 'md', class: className, ...rest } = Astro.props
+---
+
+<Stack
+  space="2xs"
+  class:list={['checkbox-field', className]}
+  data-size={size}
+  data-error={error ? '' : undefined}
+  data-label-size={labelSize}
+>
+  <label class="checkbox-wrapper">
+    <input type="checkbox" class="checkbox" aria-invalid={error ? 'true' : undefined} {...rest} />
+    <span class="checkbox-label">
+      <slot name="label">{label}</slot>
+    </span>
+  </label>
+  {error && <span class="checkbox-error">{error}</span>}
+</Stack>
+
+<style>
+  @layer base {
+    .checkbox-field {
+      --label-font-size: var(--control-font-size-md);
+      &[data-label-size='sm'] {
+        --label-font-size: var(--font-size--2);
+      }
+    }
+
+    .checkbox-wrapper {
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .checkbox {
+      --_size: ruler.fluid(20, 28);
+
+      appearance: none;
+      -webkit-appearance: none;
+      flex-shrink: 0;
+      width: var(--_size);
+      height: var(--_size);
+      border: 1.5px solid var(--input-border);
+      border-radius: var(--radius-xs);
+      background-color: var(--input-bg);
+      cursor: pointer;
+      transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease;
+
+      &:checked {
+        background-color: var(--checkbox-accent);
+        border-color: var(--checkbox-accent);
+        /* prettier-ignore */
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1.5 5L4 7.5L8.5 2.5' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: 65%;
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 2px;
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+
+    .checkbox-label {
+      font-size: var(--label-font-size);
+      color: var(--color-foreground);
+      line-height: var(--line-height);
+
+      :global(a) {
+        text-decoration: underline;
+      }
+    }
+
+    .checkbox-error {
+      font-size: var(--font-size--1);
+      color: var(--input-error-text);
+    }
+
+    /* Error state */
+    .checkbox[aria-invalid='true'] {
+      border-color: var(--input-border-error);
+    }
+
+    /* Size variants */
+    .checkbox-field[data-size='sm'] .checkbox {
+      --_size: 0.875rem;
+    }
+
+    .checkbox-field[data-size='sm'] .checkbox-label {
+      font-size: var(--control-font-size-sm);
+    }
+
+    .checkbox-field[data-size='lg'] .checkbox {
+      --_size: 1.25rem;
+    }
+
+    .checkbox-field[data-size='lg'] .checkbox-label {
+      font-size: var(--control-font-size-lg);
+    }
+  }
+</style>

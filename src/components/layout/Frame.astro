@@ -1,0 +1,69 @@
+---
+import type { HTMLAttributes } from 'astro/types'
+
+interface Props extends HTMLAttributes<'div'> {
+  as?: string
+  ratio?: string
+  fill?: boolean
+  minHeight?: string
+  position?: string
+  class?: string
+}
+
+const {
+  as: Tag = 'div',
+  ratio = '16/9',
+  fill = false,
+  minHeight, // e.g. "200px"
+  position = 'center',
+  class: className = '',
+  style,
+  ...rest
+} = Astro.props
+
+// Handle keyword
+const resolvedRatio = ratio === 'mobile' ? '250/543' : ratio
+
+const classes = ['frame', className]
+
+const vars = {
+  '--frame-ratio': resolvedRatio,
+  '--frame-pos': position,
+  '--frame-min-h': minHeight,
+}
+
+const attributes = {
+  'data-fill': fill ? '' : undefined,
+}
+---
+
+<Tag class:list={classes} style={[vars, style]} {...attributes} {...rest}>
+  <slot />
+</Tag>
+
+<style>
+  @layer base {
+    .frame {
+      display: block;
+      position: relative;
+      width: 100%;
+      aspect-ratio: var(--frame-ratio);
+      overflow: hidden;
+
+      &[data-fill] {
+        aspect-ratio: unset;
+        height: 100%;
+        min-height: var(--frame-min-h, 0);
+      }
+
+      :global(> *) {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: var(--frame-pos);
+      }
+    }
+  }
+</style>

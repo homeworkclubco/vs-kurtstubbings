@@ -1,0 +1,114 @@
+---
+/**
+ * SEO.astro — Blueprint-ready head meta component.
+ *
+ * Renders: <title>, meta description, Open Graph tags, og:url, and
+ * three JSON-LD scripts (Organization, LocalBusiness, WebSite).
+ *
+ * Usage: drop into your <head>. All props are optional — falls back to
+ * site-level defaults from src/config.ts.
+ *
+ * To reuse on another site: copy this file + src/config.ts and update SITE.
+ */
+
+import type { ImageMetadata } from "astro";
+import { getImage } from "astro:assets";
+import { getCollection } from "astro:content";
+import { SITE } from "@config";
+
+interface Props {
+  /** Full page title as it should appear in browser tab and search results. */
+  title?: string;
+  /** Meta description shown in search results (150–160 chars ideal). */
+  description?: string;
+  /** OG image — ImageMetadata from content collections, or an absolute URL string. */
+  ogImage?: ImageMetadata | string;
+}
+
+const { title = SITE.seo.title, description = SITE.seo.description, ogImage } = Astro.props;
+
+// Resolve OG image to an absolute URL.
+// Priority: prop → SITE default (already absolute).
+let ogImageUrl: string = SITE.seo.image;
+
+if (ogImage) {
+  if (typeof ogImage === "string") {
+    ogImageUrl = ogImage.startsWith("http") ? ogImage : new URL(ogImage, Astro.site).href;
+  } else {
+    // ImageMetadata from Astro content — process and construct absolute URL.
+    const processed = await getImage({ src: ogImage, width: 1200, format: "webp" });
+    ogImageUrl = new URL(processed.src, Astro.site).href;
+  }
+}
+
+const services = await getCollection("services");
+const sortedServices = services.sort((a, b) => (a.data.order ?? 99) - (b.data.order ?? 99));
+
+const { organization, localBusiness } = SITE.jsonld;
+
+const schemaOrganization = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: organization.name,
+  url: organization.url,
+  logo: {
+    "@type": "ImageObject",
+    url: organization.logo,
+  },
+  ...(organization.sameAs.length > 0 && { sameAs: organization.sameAs }),
+};
+
+const schemaLocalBusiness = {
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  name: localBusiness.name,
+  url: organization.url,
+  ...(localBusiness.telephone && { telephone: localBusiness.telephone }),
+  ...(localBusiness.address.streetAddress && {
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: localBusiness.address.streetAddress,
+      addressLocality: localBusiness.address.addressLocality,
+      postalCode: localBusiness.address.postalCode,
+      addressCountry: localBusiness.address.addressCountry,
+    },
+  }),
+  ...(sortedServices.length > 0 && {
+    hasOfferCatalog: {
+      "@type": "OfferCatalog",
+      name: "Services",
+      itemListElement: sortedServices.map((s) => ({
+        "@type": "Offer",
+        itemOffered: {
+          "@type": "Service",
+          name: s.data.title,
+          description: s.data.description,
+        },
+      })),
+    },
+  }),
+};
+
+const schemaWebSite = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: organization.name,
+  url: organization.url,
+};
+---
+
+<title>{title}</title>
+<meta name="description" content={description} />
+
+<!-- Open Graph -->
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:image" content={ogImageUrl} />
+<meta property="og:url" content={Astro.url.href} />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content={SITE.author} />
+
+<!-- JSON-LD structured data -->
+<script type="application/ld+json" set:html={JSON.stringify(schemaOrganization)} />
+<script type="application/ld+json" set:html={JSON.stringify(schemaLocalBusiness)} />
+<script type="application/ld+json" set:html={JSON.stringify(schemaWebSite)} />

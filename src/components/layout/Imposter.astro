@@ -1,0 +1,60 @@
+---
+import type { HTMLAttributes } from 'astro/types'
+import type { SpaceToken } from '../../types'
+
+interface Props extends HTMLAttributes<'div'> {
+  as?: string
+
+  /**
+   * If true, the element breaks out of its parent and
+   * aligns relative to the viewport (fixed positioning).
+   * Useful for Modals/Dialogs.
+   */
+  breakout?: boolean
+
+  /**
+   * The minimum gap between the element and the edge of the screen/container.
+   * Ensures content doesn't touch the edges on mobile.
+   * Default: '0' (can touch edges)
+   */
+  margin?: SpaceToken
+}
+
+const { as: Tag = 'div', breakout = false, margin, class: className, ...rest } = Astro.props
+
+/* * CLEAN HTML STRATEGY
+ * Filter default values.
+ * - margin: undefined if not set (css falls back to 0px)
+ * - breakout: only render if true
+ */
+const attributes = {
+  'data-breakout': breakout ? '' : undefined,
+  'data-margin': margin,
+}
+---
+
+<Tag class:list={['imposter', className]} {...attributes} {...rest}>
+  <slot />
+</Tag>
+
+<style>
+  @layer base {
+    .imposter {
+      --_margin: 0px;
+      position: absolute;
+      inset-block-start: 50%;
+      inset-inline-start: 50%;
+      transform: translate(-50%, -50%);
+      display: grid;
+      place-items: center;
+      max-inline-size: calc(100% - (var(--_margin) * 2));
+      max-block-size: calc(100% - (var(--_margin) * 2));
+      overflow: auto;
+    }
+
+    [data-breakout] {
+      position: fixed;
+      z-index: 50;
+    }
+  }
+</style>

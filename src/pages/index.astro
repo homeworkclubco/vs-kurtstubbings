@@ -1,0 +1,17 @@
+---
+import { getEntry } from "astro:content";
+import BlockRenderer from "../components/blocks/BlockRenderer.astro";
+import Layout from "../layouts/Layout.astro";
+
+const page = await getEntry("pages", "homepage");
+if (!page) throw new Error("homepage entry not found in pages collection");
+const { title, description, sections, seo } = page.data;
+---
+
+<Layout
+  title={seo?.title || title}
+  description={seo?.description || description}
+  ogImage={seo?.image}
+>
+  <BlockRenderer sections={sections} />
+</Layout>

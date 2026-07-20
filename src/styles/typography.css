@@ -1,0 +1,59 @@
+@layer tokens {
+  :root {
+    /* Default to system ui stack */
+    --font-family-body:
+      "neue-haas-grotesk-text", -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
+      sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+    --font-family-heading: "neue-haas-grotesk-display", var(--font-family-body);
+    /* --font-family-heading-alt: 'Anton', var(--font-family-body);
+    --font-family-alt: 'Alex Brush', var(--font-family-body); */
+
+    --letter-spacing-tight: -0.05em;
+    --letter-spacing-normal: 0;
+    --letter-spacing-loose: 0.05em;
+    --letter-spacing-looser: 0.17em;
+
+    --line-height-tighter: 0.75;
+    --line-height-tight: 1;
+    --line-height-snug: 1.33;
+    --line-height: 1.5;
+    --line-height-loose: 1.75;
+
+    --font-weight-thin: 100;
+    --font-weight-light: 300;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 800;
+    --font-weight-black: 900;
+
+    --measure: 65ch;
+    --measure-heading-1: 30ch;
+    --measure-heading-2: var(--measure-sm);
+    --measure-heading-3: var(--measure-sm);
+    --measure-heading-4: var(--measure-sm);
+    --measure-heading-5: var(--measure-sm);
+    --measure-heading-6: var(--measure-sm);
+    --measure-xl: 100ch;
+    --measure-lg: 75ch;
+    --measure-md: 50ch;
+    --measure-sm: 45ch;
+    --measure-xs: 30ch;
+
+    --font-size: var(--font-size-0);
+
+    @ruler scale({
+        pairs: [
+            ["-2", 11, 12],
+            ["-1", 14, 14],
+            ["0", 16, 16],
+            ["1", 18, 24],
+            ["2", 20, 32],
+            ["3", 24, 40],
+            ["4", 28, 56],
+            ["5", 32, 80],
+        ],
+        prefix: 'font-size',
+    });
+  }
+}

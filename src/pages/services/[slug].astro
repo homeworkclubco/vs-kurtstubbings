@@ -1,0 +1,24 @@
+---
+import BlockRenderer from "@components/blocks/BlockRenderer.astro";
+import Layout from "@layouts/Layout.astro";
+import { getCollection } from "astro:content";
+
+export async function getStaticPaths() {
+  const services = await getCollection("services");
+  return services.map(service => ({
+    params: { slug: service.data.slug ?? service.id },
+    props: { service },
+  }));
+}
+
+const { service } = Astro.props;
+const { title, description, sections, seo } = service.data;
+---
+
+<Layout
+  title={seo?.title || title}
+  description={seo?.description || description}
+  ogImage={seo?.image}
+>
+  <BlockRenderer sections={sections} />
+</Layout>

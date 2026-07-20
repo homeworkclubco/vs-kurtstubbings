@@ -1,0 +1,57 @@
+---
+import Heading from "@components/display/Heading.astro";
+import OverlapHeading from "@components/display/OverlapHeading.astro";
+import Prose from "@components/display/Prose.astro";
+import Container from "@components/layout/Container.astro";
+import Grid from "@components/layout/Grid.astro";
+import Section from "@components/layout/Section.astro";
+import Stack from "@components/layout/Stack.astro";
+import type { InferEntrySchema } from "astro:content";
+
+type Section_ = NonNullable<InferEntrySchema<"pages">["sections"]>[number];
+
+interface Props {
+  block: Extract<Section_, { type: "textGridBlock" }>;
+  index: number;
+}
+
+const { block } = Astro.props;
+const { id, heading, subtitle, items } = block;
+---
+
+<Section id={id} class="TextGridBlock" padding="xl">
+  <Container>
+    <Stack space="2xl">
+      {
+        (heading || subtitle) && (
+          <OverlapHeading heading={heading} subtitle={subtitle} />
+        )
+      }
+      <Grid minItemWidth="md">
+        {
+          items.map(item => (
+            <div class="TextGridBlock-item">
+              <Stack space="sm">
+                <Heading
+                  as="h3"
+                  size="2"
+                  class="TextGridBlock-title"
+                  set:html={item.title}
+                />
+                <Prose set:html={item.body} />
+              </Stack>
+            </div>
+          ))
+        }
+      </Grid>
+    </Stack>
+  </Container>
+</Section>
+
+<style>
+  .TextGridBlock-item {
+    padding: var(--space-xl) var(--space-lg);
+    border: 1px solid var(--color-border);
+    text-align: center;
+  }
+</style>

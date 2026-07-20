@@ -1,0 +1,44 @@
+---
+import Heading from "@components/display/Heading.astro";
+import Prose from "@components/display/Prose.astro";
+import Container from "@components/layout/Container.astro";
+import Section from "@components/layout/Section.astro";
+import Sidebar from "@components/layout/Sidebar.astro";
+import Stack from "@components/layout/Stack.astro";
+import type { InferEntrySchema } from "astro:content";
+
+type Section_ = NonNullable<InferEntrySchema<"pages">["sections"]>[number];
+
+interface Props {
+  block: Extract<Section_, { type: "leadBlock" }>;
+  index: number;
+}
+
+const { block } = Astro.props;
+const { id, heading, body } = block;
+---
+
+<Section id={id} class="LeadBlock" colorScheme="dark" padding="xl">
+  <Container>
+    <Sidebar side="left" sideWidth="550px" contentMin="50%" space="2xl">
+      <Stack space="lg">
+        <Heading as="h2" size="5">
+          {heading}
+        </Heading>
+      </Stack>
+      <Stack space="md">
+        <Prose size="lg" class="content">
+          <Fragment set:html={body} />
+        </Prose>
+      </Stack>
+    </Sidebar>
+  </Container>
+</Section>
+
+<style>
+  .LeadBlock {
+    .content {
+      margin-inline: 0;
+    }
+  }
+</style>

@@ -1,0 +1,36 @@
+---
+import type { HTMLAttributes } from "astro/types";
+import "lightbox3/style.css";
+
+interface Props extends HTMLAttributes<"ul"> {
+  rowHeight?: number;
+  gap?: string;
+}
+
+const { rowHeight, gap, class: className, style, ...rest } = Astro.props;
+
+const vars = {
+  "--gallery-row-height": rowHeight,
+  "--gallery-gap": gap,
+};
+---
+
+<justified-gallery
+  class:list={["justified-gallery", className]}
+  style={[vars, style]}
+  {...rest}
+>
+  <slot />
+</justified-gallery>
+
+<script>
+  import "../../scripts/justified-gallery.ts";
+</script>
+
+<style>
+  .justified-gallery {
+    --gallery-row-height: 350;
+    --lb-image-border-radius: 0;
+    gap: var(--gallery-gap, var(--space-lg));
+  }
+</style>

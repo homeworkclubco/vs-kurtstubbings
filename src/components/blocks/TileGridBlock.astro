@@ -1,0 +1,99 @@
+---
+import Button from "@components/actions/Button.astro";
+import Heading from "@components/display/Heading.astro";
+import Container from "@components/layout/Container.astro";
+import Frame from "@components/layout/Frame.astro";
+import Grid from "@components/layout/Grid.astro";
+import Section from "@components/layout/Section.astro";
+import type { ImageMetadata } from "astro";
+import { Image } from "astro:assets";
+import type { InferEntrySchema } from "astro:content";
+
+type Section_ = NonNullable<InferEntrySchema<"pages">["sections"]>[number];
+
+interface Props {
+  block: Extract<Section_, { type: "tileGridBlock" }>;
+  index: number;
+}
+
+const { block } = Astro.props;
+const { id, items, columns = 3 } = block;
+---
+
+<Section id={id} class="TileGridBlock" data-columns={columns}>
+  <Container>
+    <Grid as="ul" minItemWidth="var(--tilegrid-min-item-width)" space="lg">
+      {
+        items.map(item => (
+          <li>
+            <a href={item.href} class="tile">
+              <Frame ratio="4/3">
+                {typeof item.image === "string" ? (
+                  <img
+                    src={item.image}
+                    alt={item.imageAlt || item.title}
+                    loading="lazy"
+                  />
+                ) : (
+                  <Image
+                    src={item.image as ImageMetadata}
+                    alt={item.imageAlt || item.title}
+                    width="1024"
+                  />
+                )}
+                <div class="tile-overlay">
+                  <Heading as="h3" font="heading" size="3" align="center">
+                    {item.title}
+                  </Heading>
+                  <Button as="span" class="tile-cta">
+                    {item.cta ?? "FIND OUT MORE"}
+                  </Button>
+                </div>
+              </Frame>
+            </a>
+          </li>
+        ))
+      }
+    </Grid>
+  </Container>
+</Section>
+
+<style>
+  .TileGridBlock {
+    &[data-columns="2"] {
+      --tilegrid-min-item-width: ruler.fluid(300, 530);
+    }
+
+    &[data-columns="3"] {
+      --tilegrid-min-item-width: ruler.fluid(300, 320);
+    }
+
+    .tile {
+      display: block;
+      border: 2px solid var(--color-foreground);
+      text-decoration: none;
+
+      &:hover img {
+        transform: scale(1.05);
+      }
+    }
+
+    img {
+      transition: transform 0.5s var(--ease-out-cubic);
+    }
+
+    .tile-overlay {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-md);
+      padding: var(--space-sm);
+      background: linear-gradient(
+        to bottom,
+        color-mix(in srgb, var(--color-black) 20%, transparent),
+        color-mix(in srgb, var(--color-black) 55%, transparent)
+      );
+    }
+  }
+</style>

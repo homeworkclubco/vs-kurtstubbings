@@ -1,0 +1,48 @@
+---
+import type { InferEntrySchema } from "astro:content";
+
+type Section = NonNullable<InferEntrySchema<"pages">["sections"]>[number];
+type AstroComponent = (_props: Record<string, unknown>) => unknown;
+
+interface Props {
+  sections: Section[];
+}
+
+const componentModules = import.meta.glob<{ default: AstroComponent }>(
+  ["./*.astro", "!./BlockRenderer.astro"],
+  { eager: true }
+);
+
+const components: Record<string, AstroComponent> = {};
+for (const [path, mod] of Object.entries(componentModules)) {
+  const filename = path.replace("./", "").replace(".astro", "");
+  const key = filename.charAt(0).toLowerCase() + filename.slice(1);
+  components[key] = mod.default;
+}
+
+const { sections } = Astro.props;
+
+// TODO: consider moving header-spacer logic into the hero block components themselves
+const firstIsHero = String(sections[0]?.type).includes("Hero");
+---
+
+{!firstIsHero && <div class="header-spacer" aria-hidden="true" />}{
+  sections.map((block, index) => {
+    const Component = components[block.type];
+
+    if (!Component) {
+      console.warn(
+        `Block component not found for type: "${block.type}". Available: ${Object.keys(components).join(", ")}`
+      );
+      return null;
+    }
+
+    return <Component block={block} index={index} />;
+  })
+}
+
+<style>
+  .header-spacer {
+    height: var(--header-height, 5rem);
+  }
+</style>

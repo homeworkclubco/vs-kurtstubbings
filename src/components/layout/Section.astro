@@ -1,0 +1,108 @@
+---
+import type { HTMLAttributes } from "astro/types";
+
+interface Props extends HTMLAttributes<"section">, HTMLAttributes<"div"> {
+  as?: "section" | "div" | "footer" | "header" | "main";
+  colorScheme?: "light" | "dark";
+  padding?: "none" | "sm" | "md" | "lg" | "xl" | "2xl" | string;
+  pt?: "none" | "sm" | "md" | "lg" | "xl" | "2xl" | string;
+  pb?: "none" | "sm" | "md" | "lg" | "xl" | "2xl" | string;
+  class?: string;
+}
+
+const {
+  as = "section",
+  colorScheme,
+  class: className = "",
+  padding,
+  pt,
+  pb,
+  ...rest
+} = Astro.props;
+
+const Tag = as || "section";
+
+const classes = ["section", colorScheme, className];
+
+// Use padding only when pt and pb are not provided, otherwise default to nothing
+const dataPadding = !pt && !pb ? padding : undefined;
+
+const attributes = {
+  "data-color-scheme": colorScheme ? colorScheme : undefined,
+  "data-padding": dataPadding,
+  "data-pt": pt,
+  "data-pb": pb,
+};
+---
+
+<Tag class:list={classes} {...attributes} {...rest}>
+  <slot />
+</Tag>
+
+<style>
+  /* Map padding values to more expressive tokens  */
+  .section {
+    --padding-sm: var(--space-md-lg);
+    --padding-md: var(--space-lg-xl);
+    --padding-lg: var(--space-lg-2xl);
+    --padding-xl: var(--space-xl-4xl);
+    --padding-2xl: var(--space-3xl-5xl);
+  }
+
+  :where([data-padding="sm"]) {
+    padding-block: var(--padding-sm);
+  }
+  :where([data-padding="md"]) {
+    padding-block: var(--padding-md);
+  }
+  :where([data-padding="lg"]) {
+    padding-block: var(--padding-lg);
+  }
+  :where([data-padding="xl"]) {
+    padding-block: var(--padding-xl);
+  }
+  :where([data-padding="2xl"]) {
+    padding-block: var(--padding-2xl);
+  }
+  :where([data-padding="none"]) {
+    padding-block: 0;
+  }
+
+  :where([data-pt="sm"]) {
+    padding-block-start: var(--padding-sm);
+  }
+  :where([data-pt="md"]) {
+    padding-block-start: var(--padding-md);
+  }
+  :where([data-pt="lg"]) {
+    padding-block-start: var(--padding-lg);
+  }
+  :where([data-pt="xl"]) {
+    padding-block-start: var(--padding-xl);
+  }
+  :where([data-pt="2xl"]) {
+    padding-block-start: var(--padding-2xl);
+  }
+  :where([data-pt="none"]) {
+    padding-block-start: 0;
+  }
+
+  :where([data-pb="sm"]) {
+    padding-block-end: var(--padding-sm);
+  }
+  :where([data-pb="md"]) {
+    padding-block-end: var(--padding-md);
+  }
+  :where([data-pb="lg"]) {
+    padding-block-end: var(--padding-lg);
+  }
+  :where([data-pb="xl"]) {
+    padding-block-end: var(--padding-xl);
+  }
+  :where([data-pb="2xl"]) {
+    padding-block-end: var(--padding-2xl);
+  }
+  :where([data-pb="none"]) {
+    padding-block-end: 0;
+  }
+</style>

@@ -1,0 +1,346 @@
+@layer base {
+  /* Prose - Typography System */
+
+  .prose {
+    /* Configuration tokens (rarely need to override) */
+    --prose-body-color: var(--color-foreground);
+    --prose-heading-color: var(--color-foreground);
+    --prose-code-color: var(--color-foreground-secondary);
+    --prose-code-bg: var(--color-bg-alt);
+    --prose-border-color: var(--color-border);
+    --prose-link-color: var(--color-accent);
+    --prose-link-hover-color: var(--color-accent-hover);
+    --prose-link-font-weight: 500;
+    --prose-link-text-decoration: underline;
+    --prose-link-text-decoration-hover: none;
+
+    /* Base prose styles */
+    color: var(--prose-body-color);
+  }
+  :where(.prose) {
+    max-width: var(--measure);
+    font-size: inherit;
+    line-height: inherit;
+
+    /* Reset first/last child margins */
+    > :first-child {
+      margin-top: 0;
+    }
+
+    > :last-child {
+      margin-bottom: 0;
+    }
+
+    /* Paragraphs */
+    p {
+      margin-top: 1.25em;
+      margin-bottom: 1.25em;
+    }
+
+    /* Headings */
+    h1 {
+      color: var(--prose-heading-color);
+      font-weight: 800;
+      font-size: 2.25em;
+      margin-top: 0;
+      margin-bottom: 0.8888889em;
+      line-height: 1.1111111;
+    }
+
+    h2 {
+      color: var(--prose-heading-color);
+      font-weight: 700;
+      font-size: 1.5em;
+      margin-top: 2em;
+      margin-bottom: 1em;
+      line-height: 1.3333333;
+    }
+
+    h3 {
+      color: var(--prose-heading-color);
+      font-weight: 600;
+      font-size: 1.25em;
+      margin-top: 1.6em;
+      margin-bottom: 0.6em;
+      line-height: 1.6;
+    }
+
+    h4 {
+      color: var(--prose-heading-color);
+      font-weight: 600;
+      margin-top: 1.5em;
+      margin-bottom: 0.5em;
+      line-height: 1.5;
+    }
+
+    h2 + *,
+    h3 + *,
+    h4 + * {
+      margin-top: 0;
+    }
+
+    /* Links */
+    a:not(.btn) {
+      color: var(--prose-link-color);
+      text-decoration: var(--prose-link-text-decoration);
+      font-weight: var(--prose-link-font-weight);
+      transition: color 0.2s ease;
+    }
+
+    a:not(.btn):hover {
+      color: var(--prose-link-hover-color);
+      text-decoration: var(--prose-link-text-decoration-hover);
+    }
+
+    /* Strong & Emphasis */
+    strong {
+      color: var(--prose-heading-color);
+      font-weight: 600;
+    }
+
+    em {
+      font-style: italic;
+    }
+
+    /* Code */
+    code {
+      color: var(--prose-code-color);
+      font-weight: 500;
+      font-size: 0.875em;
+      font-family:
+        ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+        monospace;
+    }
+
+    code::before,
+    code::after {
+      content: "`";
+    }
+
+    pre {
+      color: var(--prose-code-color);
+      background-color: var(--prose-code-bg);
+      overflow-x: auto;
+      font-weight: 400;
+      font-size: 0.875em;
+      line-height: 1.7142857;
+      margin-top: 1.7142857em;
+      margin-bottom: 1.7142857em;
+      border-radius: 0.375rem;
+      padding: 0.8571429em 1.1428571em;
+    }
+
+    pre code {
+      background-color: transparent;
+      border-width: 0;
+      border-radius: 0;
+      padding: 0;
+      font-weight: inherit;
+      color: inherit;
+      font-size: inherit;
+      font-family: inherit;
+      line-height: inherit;
+    }
+
+    pre code::before,
+    pre code::after {
+      content: none;
+    }
+
+    /* Lists */
+    ul,
+    ol {
+      margin-top: 1.25em;
+      margin-bottom: 1.25em;
+      padding-inline-start: 1.625em;
+      list-style: initial;
+    }
+
+    li {
+      margin-top: 0.5em;
+      margin-bottom: 0.5em;
+    }
+
+    ul > li {
+      padding-inline-start: 0.375em;
+    }
+
+    ol > li {
+      padding-inline-start: 0.375em;
+    }
+
+    ul > li::marker {
+      color: var(--color-foreground-secondary);
+    }
+
+    ol > li::marker {
+      color: var(--color-foreground-secondary);
+      font-weight: 400;
+    }
+
+    ul ul,
+    ul ol,
+    ol ul,
+    ol ol {
+      margin-top: 0.75em;
+      margin-bottom: 0.75em;
+    }
+
+    li p {
+      margin-top: 0.75em;
+      margin-bottom: 0.75em;
+    }
+
+    > ul > li p {
+      margin-top: 0.75em;
+      margin-bottom: 0.75em;
+    }
+
+    > ul > li > *:first-child {
+      margin-top: 1.25em;
+    }
+
+    > ul > li > *:last-child {
+      margin-bottom: 1.25em;
+    }
+
+    > ol > li > *:first-child {
+      margin-top: 1.25em;
+    }
+
+    > ol > li > *:last-child {
+      margin-bottom: 1.25em;
+    }
+
+    /* Blockquotes */
+    blockquote {
+      color: var(--prose-heading-color);
+      border-inline-start-width: 0.25rem;
+      border-inline-start-color: var(--prose-border-color);
+      quotes: "\201C" "\201D" "\2018" "\2019";
+      margin-top: 1.6em;
+      margin-bottom: 1.6em;
+      padding-inline-start: 1em;
+
+      p {
+        margin-top: 0;
+        margin-bottom: 0;
+      }
+    }
+
+    blockquote p:first-of-type::before {
+      content: open-quote;
+    }
+
+    blockquote p:last-of-type::after {
+      content: close-quote;
+    }
+
+    /* Horizontal Rule */
+    hr {
+      border-color: var(--prose-border-color);
+      border-top-width: 1px;
+      margin-top: 3em;
+      margin-bottom: 3em;
+    }
+
+    /* Images & Figures */
+    img,
+    picture,
+    video {
+      margin-top: 2em;
+      margin-bottom: 2em;
+    }
+
+    figure {
+      margin-top: 2em;
+      margin-bottom: 2em;
+    }
+
+    figure > * {
+      margin-top: 0;
+      margin-bottom: 0;
+    }
+
+    figcaption {
+      color: var(--color-foreground-secondary);
+      font-size: 0.875em;
+      line-height: 1.4285714;
+      margin-top: 0.8571429em;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      table-layout: auto;
+      text-align: start;
+      margin-top: 2em;
+      margin-bottom: 2em;
+      font-size: 0.875em;
+      line-height: 1.7142857;
+    }
+
+    thead {
+      border-bottom-width: 1px;
+      border-bottom-color: var(--prose-border-color);
+    }
+
+    thead th {
+      color: var(--prose-heading-color);
+      font-weight: 600;
+      vertical-align: bottom;
+      padding-inline-end: 0.5714286em;
+      padding-bottom: 0.5714286em;
+      padding-inline-start: 0.5714286em;
+    }
+
+    thead th:first-child {
+      padding-inline-start: 0;
+    }
+
+    thead th:last-child {
+      padding-inline-end: 0;
+    }
+
+    tbody tr {
+      border-bottom-width: 1px;
+      border-bottom-color: var(--prose-border-color);
+    }
+
+    tbody tr:last-child {
+      border-bottom-width: 0;
+    }
+
+    tbody td {
+      vertical-align: baseline;
+      padding-top: 0.5714286em;
+      padding-inline-end: 0.5714286em;
+      padding-bottom: 0.5714286em;
+      padding-inline-start: 0.5714286em;
+    }
+
+    tbody td:first-child {
+      padding-inline-start: 0;
+    }
+
+    tbody td:last-child {
+      padding-inline-end: 0;
+    }
+
+    /* Headings with code */
+    h2 code,
+    h3 code,
+    h4 code {
+      font-size: 0.875em;
+    }
+
+    /* Lead paragraph variant */
+    .lead {
+      color: var(--color-prose-lead, var(--color-foreground-secondary));
+      font-size: 1.25em;
+      line-height: 1.6;
+      margin-top: 1.2em;
+      margin-bottom: 1.2em;
+    }
+  }
+}

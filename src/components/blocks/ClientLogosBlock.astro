@@ -1,0 +1,75 @@
+---
+import OverlapHeading from "@components/display/OverlapHeading.astro";
+import Container from "@components/layout/Container.astro";
+import Grid from "@components/layout/Grid.astro";
+import Section from "@components/layout/Section.astro";
+import Stack from "@components/layout/Stack.astro";
+import { Image } from "astro:assets";
+import type { InferEntrySchema } from "astro:content";
+import { getCollection } from "astro:content";
+
+type Section_ = NonNullable<InferEntrySchema<"pages">["sections"]>[number];
+
+interface Props {
+  block: Extract<Section_, { type: "clientLogosBlock" }>;
+  index: number;
+}
+
+const { block } = Astro.props;
+const {
+  id,
+  heading = "Clients",
+  subtitle = "Who We've Worked With",
+} = block;
+
+const clients = await getCollection("clients");
+---
+
+<Section id={id} class="ClientLogosBlock" colorScheme="dark" padding="xl">
+  <Container>
+    <Stack space="2xl" align="center" text="center">
+      <OverlapHeading heading={heading} subtitle={subtitle} />
+      <Grid
+        minItemWidth="var(--ClientLogosBlock-min-item-width)"
+        as="ul"
+        class="logo-grid"
+      >
+        {
+          clients.map(client => (
+            <li class="logo-item">
+              <Image
+                src={client.data.logo}
+                alt={client.data.name}
+                loading="lazy"
+              />
+            </li>
+          ))
+        }
+      </Grid>
+    </Stack>
+  </Container>
+</Section>
+
+<style>
+  .ClientLogosBlock {
+    --ClientLogosBlock-min-item-width: ruler.fluid(150, 250);
+  }
+  .logo-grid {
+    width: 100%;
+  }
+
+  .logo-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 16 / 9;
+    padding: var(--space-sm);
+  }
+
+  .logo-item img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    filter: brightness(0) invert(1);
+  }
+</style>

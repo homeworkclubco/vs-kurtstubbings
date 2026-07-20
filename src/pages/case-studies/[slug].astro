@@ -1,0 +1,116 @@
+---
+import Heading from "@components/display/Heading.astro";
+import Prose from "@components/display/Prose.astro";
+import Container from "@components/layout/Container.astro";
+import Frame from "@components/layout/Frame.astro";
+import JustifiedGallery from "@components/layout/JustifiedGallery.astro";
+import Section from "@components/layout/Section.astro";
+import Stack from "@components/layout/Stack.astro";
+import Layout from "@layouts/Layout.astro";
+import { getImage, Image } from "astro:assets";
+import { getCollection, getEntry, render } from "astro:content";
+
+export async function getStaticPaths() {
+  const entries = await getCollection("caseStudies");
+  return entries.map(entry => ({
+    params: { slug: entry.id.replace(/\.mdx?$/, "") },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const { title, client, featuredImage, gallery, excerpt } = entry.data;
+
+const clientEntry = client ? await getEntry('clients', client) : null;
+
+const galleryFullSize = await Promise.all(
+  gallery.map(img => getImage({ src: img.src, width: 2400, format: "webp" }))
+);
+---
+
+<Layout title={title} description={excerpt}>
+  <article>
+    <Section padding="none" class="case-study-hero">
+      <Frame fill minHeight="28rem">
+        <Image
+          src={featuredImage.src}
+          alt={featuredImage.alt || title}
+          width="2400"
+          loading="eager"
+        />
+        <div class="case-study-hero-overlay">
+          <Container size="wide">
+            <Stack space="sm" align="center" text="center">
+              {
+                clientEntry && (
+                  <p class="case-study-client">{clientEntry.data.name}</p>
+                )
+              }
+              <Heading as="h1" font="heading" size="5">
+                {title}
+              </Heading>
+            </Stack>
+          </Container>
+        </div>
+      </Frame>
+    </Section>
+
+    <Section padding="lg">
+      <Container>
+        <Prose>
+          <Content />
+        </Prose>
+      </Container>
+    </Section>
+
+    {
+      gallery.length > 0 && (
+        <Section padding="xl" pt="none">
+          <Container>
+            <JustifiedGallery>
+              {gallery.map((img, i) => (
+                <li data-ratio={img.src.width / img.src.height}>
+                  <a
+                    href={galleryFullSize[i].src}
+                    data-lightbox="case-study-gallery"
+                    data-alt={img.alt || `${title} — image ${i + 1}`}
+                  >
+                    <Image
+                      src={img.src}
+                      alt={img.alt || `${title} — image ${i + 1}`}
+                      width="1200"
+                      loading="lazy"
+                    />
+                  </a>
+                </li>
+              ))}
+            </JustifiedGallery>
+          </Container>
+        </Section>
+      )
+    }
+  </article>
+</Layout>
+
+<style>
+  .case-study-hero-overlay {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--color-black) 30%, transparent),
+      color-mix(in srgb, var(--color-black) 65%, transparent)
+    );
+    color: var(--color-white);
+  }
+
+  .case-study-client {
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    font-size: var(--font-size--1);
+    color: var(--color-white);
+    opacity: 0.85;
+  }
+</style>

@@ -1,0 +1,50 @@
+---
+import type { HTMLAttributes } from "astro/types";
+import type { SpaceToken } from "../types";
+
+interface Props extends HTMLAttributes<"div"> {
+  as?: string;
+  /** Minimum height of the cover */
+  minHeight?: string;
+  /** Space between the centered content and the top/bottom */
+  space?: SpaceToken;
+  children: any; // Explicitly requires children
+}
+
+const {
+  as: Tag = "div",
+  minHeight = "100vh", // Default to full viewport
+  space = "lg",
+  class: className = "",
+  style,
+  ...rest
+} = Astro.props;
+
+const vars = {
+  "--cover-min-height": minHeight,
+  "--cover-space": `var(--space-${space})`,
+};
+---
+
+<Tag class:list={["cover", className]} style={[vars, style]} {...rest}>
+  <slot name="top" />
+  <div class="cover-center">
+    <slot />
+  </div>
+
+  <slot name="bottom" />
+</Tag>
+
+<style>
+  .cover {
+    display: flex;
+    flex-direction: column;
+    min-block-size: var(--cover-min-height);
+    gap: var(--cover-space);
+  }
+
+  .cover-center {
+    margin-block: auto; /* The Magic: Auto margins center it vertically */
+    width: 100%;
+  }
+</style>

@@ -1,0 +1,42 @@
+[
+  {
+    "uuid": "050032ae-8c4f-460f-85e5-1ac40147f263",
+    "name": "Product design",
+    "slug": "product-design"
+  },
+  {
+    "uuid": "220bcd87-5ae5-4325-a9b0-496efb785188",
+    "name": "Design lead",
+    "slug": "design-lead"
+  },
+  {
+    "uuid": "0e2425fe-0f6d-44bf-92b5-9c47954928cd",
+    "name": "Team",
+    "slug": "team"
+  },
+  {
+    "uuid": "6ffee64a-2762-4b80-9507-83beec09ffe6",
+    "name": "Archive",
+    "slug": "archive"
+  },
+  {
+    "uuid": "be45a7a8-165c-4164-9cc0-249bdaf4c73c",
+    "name": "Design and code",
+    "slug": "design-code"
+  },
+  {
+    "uuid": "26b6cd39-59a9-40fc-8e0c-db06facb0239",
+    "name": "Development",
+    "slug": "development"
+  },
+  {
+    "uuid": "4881eb67-1731-49d1-964a-4e4fcf685b9a",
+    "name": "AI",
+    "slug": "ai"
+  },
+  {
+    "uuid": "1e5263d2-fad5-4f4c-ad24-61361b24d218",
+    "name": "Prototyping",
+    "slug": "prototyping"
+  }
+]

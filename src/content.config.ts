@@ -13,8 +13,23 @@ const seoSchema = (image: SchemaContext['image']) =>
   description: z.string().optional(),
   image: image().or(z.string()).optional(),
 }).optional();
-const sectionsSchema = (image: SchemaContext['image']) =>
-  z.array(
+const image_with_altSchema = (image: SchemaContext['image']) =>
+  z.object({
+  src: image().or(z.string()).optional(),
+  alt: z.string().optional(),
+}).optional();
+
+// Collections
+const pages = defineCollection({
+  loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/pages" }),
+  schema: ({ image }) =>
+    z.object({
+  uuid: z.string().uuid().optional(),
+  title: z.string().optional(),
+  description: z.string().optional(),
+  slug: z.string().optional(),
+  seo: seoSchema(image).optional(),
+  sections: z.array(
 z.discriminatedUnion("type", [
 z.object({
   type: z.literal("halftoneHeroBlock"),
@@ -150,24 +165,7 @@ z.object({
   subtitle: z.string().optional(),
 }),
 ])
-).default([]);
-const image_with_altSchema = (image: SchemaContext['image']) =>
-  z.object({
-  src: image().or(z.string()).optional(),
-  alt: z.string().optional(),
-}).optional();
-
-// Collections
-const pages = defineCollection({
-  loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/pages" }),
-  schema: ({ image }) =>
-    z.object({
-  uuid: z.string().uuid().optional(),
-  title: z.string().optional(),
-  description: z.string().optional(),
-  slug: z.string().optional(),
-  seo: seoSchema(image).optional(),
-  sections: sectionsSchema(image),
+).default([]),
 }),
 });
 const posts = defineCollection({
@@ -183,7 +181,6 @@ const posts = defineCollection({
   featuredImage: image_with_altSchema(image).optional(),
   categories: z.array(z.string()).default([]),
   seo: seoSchema(image).optional(),
-  sections: sectionsSchema(image),
 }),
 });
 const categories = defineCollection({

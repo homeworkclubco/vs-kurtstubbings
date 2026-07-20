@@ -271,8 +271,7 @@ content:
           label: "{fields.name}"
       - name: seo
         component: seo
-      - name: sections
-        component: sections
+      - { name: body, label: Body, type: rich-text }
 
   - name: categories
     label: Categories

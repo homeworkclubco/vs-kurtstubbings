@@ -179,7 +179,7 @@ const posts = defineCollection({
   excerpt: z.string().optional(),
   slug: z.string().optional(),
   date: z.string().optional(),
-  published: z.boolean().optional(),
+  published: z.boolean().default(true),
   featuredImage: image_with_altSchema(image).optional(),
   categories: z.array(z.string()).default([]),
   seo: seoSchema(image).optional(),
@@ -190,11 +190,10 @@ const categories = defineCollection({
   loader: file("./src/content/categories.json", {
     parser: (text) => {
       const items = JSON.parse(text) as Array<Record<string, unknown>>;
-      return items.map((item, i) => ({ id: String((item as any).uuid ?? i), ...item }));
+      return items.map((item, i) => ({ id: String(i), ...item }));
     },
   }),
   schema: z.object({
-  uuid: z.string().uuid().optional(),
   name: z.string().optional(),
   slug: z.string().optional(),
 }),

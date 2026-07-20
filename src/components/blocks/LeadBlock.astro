@@ -3,42 +3,80 @@ import Heading from "@components/display/Heading.astro";
 import Prose from "@components/display/Prose.astro";
 import Container from "@components/layout/Container.astro";
 import Section from "@components/layout/Section.astro";
-import Sidebar from "@components/layout/Sidebar.astro";
 import Stack from "@components/layout/Stack.astro";
 import type { InferEntrySchema } from "astro:content";
 
 type Section_ = NonNullable<InferEntrySchema<"pages">["sections"]>[number];
 
 interface Props {
-  block: Extract<Section_, { type: "leadBlock" }>;
+  block: Extract<Section_, { type: "LeadBlock" }>;
   index: number;
 }
 
-const { block } = Astro.props;
+const { block, index } = Astro.props;
 const { id, heading, body } = block;
 ---
 
-<Section id={id} class="LeadBlock" colorScheme="dark" padding="xl">
+<Section id={id} data-index={index} padding="xl" class="LeadBlock">
   <Container>
-    <Sidebar side="left" sideWidth="550px" contentMin="50%" space="2xl">
-      <Stack space="lg">
-        <Heading as="h2" size="5">
-          {heading}
-        </Heading>
-      </Stack>
-      <Stack space="md">
-        <Prose size="lg" class="content">
-          <Fragment set:html={body} />
-        </Prose>
-      </Stack>
-    </Sidebar>
+    <Stack space="lg">
+      {
+        heading && (
+          <Heading
+            class="LeadBlock-heading"
+            as={index === 0 ? "h1" : "h2"}
+            size="4"
+          >
+            <svg
+              class="motif"
+              viewBox="0 0 43 30"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle
+                class="circle-1"
+                cx="14.5"
+                cy="14.5"
+                r="14.5"
+                fill="#001AFF"
+              />
+              <circle
+                class="circle-2"
+                cx="28.5"
+                cy="14.5"
+                r="14.5"
+                fill="#001AFF"
+              />
+            </svg>
+            {heading}
+          </Heading>
+        )
+      }
+      <Prose class="LeadBlock-body" set:html={body} />
+    </Stack>
   </Container>
 </Section>
 
 <style>
-  .LeadBlock {
-    .content {
-      margin-inline: 0;
-    }
+  .LeadBlock-heading {
+    text-indent: 4ex;
+    position: relative;
+  }
+
+  .motif {
+    position: absolute;
+    top: 0.6ex;
+    height: 1ex;
+    width: auto;
+  }
+
+  .circle-2 {
+    mix-blend-mode: difference;
+  }
+
+  .LeadBlock-body {
+    max-width: 40rem;
+    margin-left: var(--space-lg);
+    max-width: var(--measure-sm);
   }
 </style>

@@ -5,4 +5,7 @@ excerpt: "I have a new website. And this time, a space for me to write things! "
 slug: new-website-who-dis
 date: 2026-07-20
 published: true
+seo:
+  title: New website, who dis?
+  description: "I have a new website. And this time, a space for me to write things! "
 ---

@@ -182,7 +182,6 @@ const posts = defineCollection({
   published: z.boolean().optional(),
   featuredImage: image_with_altSchema(image).optional(),
   categories: z.array(z.string()).default([]),
-  null: z.string().optional(),
   seo: seoSchema(image).optional(),
   sections: sectionsSchema(image),
 }),

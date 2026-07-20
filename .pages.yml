@@ -269,7 +269,6 @@ content:
           value: "{fields.uuid}"
           search: name
           label: "{fields.name}"
-      - {name: }
       - name: seo
         component: seo
       - name: sections
